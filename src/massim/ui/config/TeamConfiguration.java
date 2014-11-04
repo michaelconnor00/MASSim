@@ -41,7 +41,9 @@ public class TeamConfiguration extends Configuration {
 		BasicActionMAP("Basic Action MAP"),
 		NoHelp("No Help"),
 		NoHelpRep("No Help Replaning"),
+		ResourceMAP("Resource MAP"),
 		New("New Team");
+		
 		private String fName;
 	    public String getFullName(){return fName;}
 	    private TeamType(String fName){this.fName = fName;}
