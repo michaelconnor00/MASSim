@@ -11,7 +11,11 @@ import massim.agents.advancedactionmap.AdvActionMAPTeam;
 import massim.agents.nohelp.NoHelpTeam;
 import massim.agents.nohelp.NoHelpRepTeam;
 import massim.agents.nohelp.NoHelpRepAgent;
+
 import java.util.*;
+
+import experiments.tools.CsvTool;
+
 /**
  * Experiment for comparing resource MAP to other MAP's
  * 
@@ -19,64 +23,89 @@ import java.util.*;
  * 
  */
 public class ResourceExp {
-	
+
 	/*
 	 * Command line arguments are: [0] = number of runs, [1] = simulation to run
 	 */
 	public static void main(String[] args) {
-		
+
 		Scanner inputScanner = new Scanner(System.in);
-		
+
 		try {
-			
+
 			int experimentNumber = 0;
+			int numberOfExperiments = 0;
 			int numberOfRuns = 0;
+			
 			
 			System.out.println("Enter the experiment number:");
 			experimentNumber = inputScanner.nextInt();
+
+			System.out.println("Enter the number of experiments to run:");
+			numberOfExperiments = inputScanner.nextInt();
 			
-			System.out.println("Enter the numbers of runs:");
+			System.out.println("Enter the numbers of runs per experiment:");
 			numberOfRuns = inputScanner.nextInt();
+
+			if (experimentNumber == 1)
+				runSimulation1(numberOfExperiments, numberOfRuns);
 			
-			
-			if (numberOfRuns < 1 || experimentNumber < 1) {
-				if (Integer.parseInt(args[0]) == 1)
-					runSimulation1(Integer.parseInt(args[1]));
-				else if (Integer.parseInt(args[0]) == 2)
-					runSimulation2(Integer.parseInt(args[1]));
-				else if (Integer.parseInt(args[0]) == 3)
-					runSimulation3(Integer.parseInt(args[1]));
-			}
-			//else{
-				//System.out.println("You must pass the following arguments to begin the simulation: \n"+
-								 // "args[0] = number of runs, args[1] = simulation # to run");
-				//System.exit(0);
-			//}
-			// runSimulation1(100);
+			// For running other simulations...
+			/*
+			else if (experimentNumber == 2)
+				runSimulation2(numberOfRuns);
+			else if (experimentNumber == 3)
+				runSimulation3(numberOfRuns);
+			 */
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static void runSimulation1(int numberOfRuns) throws Exception {
+	public static void runSimulation1(int numberOfExperiments, int numberOfRuns) throws Exception {
 
 		if (numberOfRuns < 1)
 			throw new Exception("numberOfRuns is invalid!");
 
+		if (numberOfExperiments < 1)
+			throw new Exception("numberOfExperiments is invalid!");
+			
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
-		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250,
-				300, 350, 500 };
+		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250, 300, 350, 500 };
 
 		Team.teamSize = 8;
 
-		System.out
-				.println("Disturbance NoHelp NoHelpOpt Difference NoHelpRep RepCount NoHelpRepOpt RepCount "
-						+ "Difference Help HelpOpt Difference HelpRep RepCount HelpRepOpt RepCount Difference");
+		//System.out.println("Disturbance NoHelp NoHelpOpt Difference NoHelpRep RepCount NoHelpRepOpt RepCount "
+					//	+ "Difference Help HelpOpt Difference HelpRep RepCount HelpRepOpt RepCount Difference");
 
+		// Set up the CSV file for experiment output:
+		String[] csv_columns = {"Run Number",
+								"Disturbance Amount",
+								"No Help Score",
+								"No Help Opt Assign Score",
+								"Score Difference",
+								"No Help Re-plan Score",
+								"Re-plan Count",
+								"No Help Re-plan Opt Assign Score",
+								"Re-plan Count",
+								"Score Difference",
+								"Help Score",
+								"Help Opt Assign Score",
+								"Score Difference",
+								"Help Re-plan Score",
+								"Re-plan Count",
+								"Help Re-plan Opt Assign Score",
+								"Re-plan Count",
+								"Score Difference",
+								};
+		
+		
+		CsvTool csv_file = new CsvTool("Experiment1", csv_columns);
+	
 		/* The experiments loop */
 
-		for (int exp1 = 0; exp1 < 11; exp1++) {
+		for (int exp1 = 0; exp1 < numberOfExperiments; exp1++) {
 
 			/* Create the teams involved in the simulation */
 			Team[] teams = new Team[8];
@@ -143,14 +172,21 @@ public class ResourceExp {
 			/* Initialize and run the experiment */
 			se.initializeExperiment(numberOfRuns);
 			int[] teamScores = se.runExperiment();
-			
-			// How much re-planning did the replanning teams do?
-			int averageReplan2 = (int) Math.round((double) ((NoHelpRepTeam) teams[2]).getReplanCounts() / numberOfRuns);
-			int averageReplan3 = (int) Math.round((double) ((NoHelpRepTeam) teams[3]).getReplanCounts() / numberOfRuns);
-			int averageReplan6 = (int) Math.round((double) ((AdvActionMAPRepTeam) teams[6]).getReplanCounts() / numberOfRuns);
-			int averageReplan7 = (int) Math.round((double) ((AdvActionMAPRepTeam) teams[7]).getReplanCounts() / numberOfRuns);
 
-			
+			// How much re-planning did the re-planning teams do?
+			int averageReplan2 = (int) Math
+					.round((double) ((NoHelpRepTeam) teams[2])
+							.getReplanCounts() / numberOfRuns);
+			int averageReplan3 = (int) Math
+					.round((double) ((NoHelpRepTeam) teams[3])
+							.getReplanCounts() / numberOfRuns);
+			int averageReplan6 = (int) Math
+					.round((double) ((AdvActionMAPRepTeam) teams[6])
+							.getReplanCounts() / numberOfRuns);
+			int averageReplan7 = (int) Math
+					.round((double) ((AdvActionMAPRepTeam) teams[7])
+							.getReplanCounts() / numberOfRuns);
+			/*
 			if (teamScores.length > 1) {
 				System.out.println(String.format("%.2f" + "\t%d\t%d\t%d\t%d"
 						+ "\t%d\t%d\t%d\t%d" + "\t%d\t%d\t%d\t%d"
@@ -165,9 +201,44 @@ public class ResourceExp {
 								- teamScores[6]));
 			} else
 				System.out.println("Score : 0");
+			*/
+			
+			// Add run data to csv file as a new row of data
+			String[] run_data = {
+					String.valueOf(exp1),
+					String.valueOf(SimulationEngine.disturbanceLevel),
+					String.valueOf(teamScores[0]),
+					String.valueOf(teamScores[1]),
+					String.valueOf(teamScores[1] - teamScores[0]),
+					String.valueOf(teamScores[2]),
+					String.valueOf(averageReplan2),
+					String.valueOf(teamScores[3]),
+					String.valueOf(averageReplan3),
+					String.valueOf(teamScores[3] - teamScores[2]),
+					String.valueOf(teamScores[4]),
+					String.valueOf(teamScores[5]),
+					String.valueOf(teamScores[5] - teamScores[4]),
+					String.valueOf(teamScores[6]),
+					String.valueOf(averageReplan6),
+					String.valueOf(teamScores[7]),
+					String.valueOf(averageReplan7),
+					String.valueOf(teamScores[7] - teamScores[6]),
+					
+			};
+			csv_file.appendRow(run_data);
+			System.out.println("Run " +exp1+" done.");
 		}
+		// End of all experiment runs
+		
+		csv_file.closeFileIO();
+		System.out.println("Experiment Complete.  Data saved to csv output file.");
 	}
 
+	
+	
+	
+	/*
+	
 	public static void runSimulation2(int numberOfRuns) throws Exception {
 
 		if (numberOfRuns < 1)
@@ -359,5 +430,7 @@ public class ResourceExp {
 				System.out.println("Score : 0");
 		}
 	}
+	
+	*/
 
 }
