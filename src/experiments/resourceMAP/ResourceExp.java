@@ -11,6 +11,8 @@ import massim.agents.advancedactionmap.AdvActionMAPTeam;
 import massim.agents.nohelp.NoHelpTeam;
 import massim.agents.nohelp.NoHelpRepTeam;
 import massim.agents.nohelp.NoHelpRepAgent;
+import massim.agents.resourcemap.ResourceMAPAgent;
+import massim.agents.resourcemap.ResourceMAPTeam;
 
 import java.util.*;
 
@@ -74,7 +76,7 @@ public class ResourceExp {
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
 		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250, 300, 350, 500 };
 
-		Team.teamSize = 8;
+		Team.teamSize = 10;
 
 		//System.out.println("Disturbance NoHelp NoHelpOpt Difference NoHelpRep RepCount NoHelpRepOpt RepCount "
 					//	+ "Difference Help HelpOpt Difference HelpRep RepCount HelpRepOpt RepCount Difference");
@@ -98,17 +100,19 @@ public class ResourceExp {
 								"Help Re-plan Opt Assign Score",
 								"Re-plan Count",
 								"Score Difference",
+								"ResourceMAP Score",
+								"ResourceMAP Re-Plan Opt Score"
 								};
 		
 		
-		CsvTool csv_file = new CsvTool("Experiment1", csv_columns);
+		CsvTool csv_file = new CsvTool("Experiment1Output", csv_columns);
 	
 		/* The experiments loop */
 
-		for (int exp1 = 0; exp1 < numberOfExperiments; exp1++) {
+		for (int expNumber = 0; expNumber < numberOfExperiments; expNumber++) {
 
 			/* Create the teams involved in the simulation */
-			Team[] teams = new Team[8];
+			Team[] teams = new Team[Team.teamSize];
 
 			// No help team
 			teams[0] = new NoHelpTeam();
@@ -137,6 +141,13 @@ public class ResourceExp {
 			// Advanced action MAP, re-plan, optimized assignment
 			teams[7] = new AdvActionMAPRepTeam();
 			teams[7].setOptimumAssign(true);
+			
+			// Resource MAP 
+			teams[8] = new ResourceMAPTeam();
+			
+			// Resource MAP, optimized assignment
+			teams[9] = new ResourceMAPTeam();
+			teams[9].setOptimumAssign(true);
 
 			/* Create the SimulationEngine */
 			SimulationEngine se = new SimulationEngine(teams);
@@ -153,6 +164,8 @@ public class ResourceExp {
 			TeamTask.achievementReward = 2000;
 			TeamTask.initResCoef = 160;
 
+			/* Set the Team Attributes */
+			
 			NoHelpRepAgent.WREP = -0.25;
 
 			AdvActionMAPAgent.WLL = -0.1;
@@ -165,9 +178,10 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.requestThreshold = 351;
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
-
-			/* vary the disturbance: */
-			SimulationEngine.disturbanceLevel = 0.05 * exp1;
+			
+			
+			/* vary the disturbance */
+			SimulationEngine.disturbanceLevel = 0.05 * expNumber;
 
 			/* Initialize and run the experiment */
 			se.initializeExperiment(numberOfRuns);
@@ -186,26 +200,10 @@ public class ResourceExp {
 			int averageReplan7 = (int) Math
 					.round((double) ((AdvActionMAPRepTeam) teams[7])
 							.getReplanCounts() / numberOfRuns);
-			/*
-			if (teamScores.length > 1) {
-				System.out.println(String.format("%.2f" + "\t%d\t%d\t%d\t%d"
-						+ "\t%d\t%d\t%d\t%d" + "\t%d\t%d\t%d\t%d"
-						+ "\t%d\t%d\t%d\t%d",
-						SimulationEngine.disturbanceLevel, teamScores[0],
-						teamScores[1], teamScores[1] - teamScores[0],
-						teamScores[2], averageReplan2, teamScores[3],
-						averageReplan3, teamScores[3] - teamScores[2],
-						teamScores[4], teamScores[5], teamScores[5]
-								- teamScores[4], teamScores[6], averageReplan6,
-						teamScores[7], averageReplan7, teamScores[7]
-								- teamScores[6]));
-			} else
-				System.out.println("Score : 0");
-			*/
 			
 			// Add run data to csv file as a new row of data
 			String[] run_data = {
-					String.valueOf(exp1),
+					String.valueOf(expNumber),
 					String.valueOf(SimulationEngine.disturbanceLevel),
 					String.valueOf(teamScores[0]),
 					String.valueOf(teamScores[1]),
@@ -223,10 +221,12 @@ public class ResourceExp {
 					String.valueOf(teamScores[7]),
 					String.valueOf(averageReplan7),
 					String.valueOf(teamScores[7] - teamScores[6]),
+					String.valueOf(teamScores[8]),
+					String.valueOf(teamScores[9])
 					
 			};
 			csv_file.appendRow(run_data);
-			System.out.println("Run " +exp1+" done.");
+			System.out.println("Experiment " + expNumber +" done.");
 		}
 		// End of all experiment runs
 		
