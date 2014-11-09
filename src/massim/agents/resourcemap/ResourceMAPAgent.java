@@ -6,46 +6,79 @@ import massim.Agent;
 import massim.Board;
 import massim.CommMedium;
 import massim.Message;
+import massim.Path;
 import massim.RowCol;
 import massim.Team;
 import massim.TeamTask;
 
+
 /**
- * Resource MAP Agent Implementation
+ * Resource MAP Agent.  Uses Team Well-being.  No re-planning.
  * 
- * @author Omid Alemi
- * @version 1.0 2011/11/22
+ * @author Devin Calado, Michael Conner
+ * @version 2.0 2012/01/23
+ * 
  */
 public class ResourceMAPAgent extends Agent {
 
-	private boolean dbgInf = true;
-	private boolean dbgErr = true;
+	boolean dbgInf = false;
+	boolean dbgErr = true;
+	boolean dbgInf2 = false;
 	
-	private final static int RMAP_HELP_REQ_MSG = 1;
-	private final static int RMAP_BID_MSG = 2;
-	private final static int RMAP_HELP_CONF = 3;
+	private enum ResMAPState {
+		S_INIT, 
+		S_SEEK_HELP, S_RESPOND_TO_REQ, 
+		S_DECIDE_OWN_ACT, S_BLOCKED, S_RESPOND_BIDS, S_BIDDING,
+		S_DECIDE_HELP_ACT, 
+		R_IGNORE_HELP_REQ, R_GET_HELP_REQ,
+		R_GET_BIDS, R_BIDDING, R_DO_OWN_ACT,
+		R_BLOCKED, R_ACCEPT_HELP_ACT,R_GET_BID_CONF,
+		R_DO_HELP_ACT,
+		
+		// Resource MAP specific states
+		S_PROVIDE_RES, R_ACCEPT_RES
+	}
 	
-	private final static int RESOURCE_OFFER_INTERVAL = 10; 
-	
-	private enum RMAPState {S_INIT,
-							S_RESPOND_TO_REQ, S_SEEKING_HELP, S_BLOCKED,
-							S_BIDDING, S_DECIDE_OWN_ACT, S_RESPOND_BIDS,
-							S_DECIDE_HELP_ACT,
-							R_GET_REQUESTS, R_IGNORE_REQUESTS, R_BLOCKED,
-							R_BIDDING, R_DO_OWN_ACT, R_GET_BIDS,
-							R_GET_BID_CONF, R_ACCEPT_HELP_ACT,
-							R_DO_HELP_ACT}
 	
 	
-	private RMAPState state;
-							
+	// Request and cost thresholds
+	public static double requestThreshold;
+	public static double lowCostThreshold;
+	public static double EPSILON;
+	
+	// Message types for MAP
+	private final static int MAP_HELP_REQ_MSG = 1;
+	private final static int MAP_BID_MSG = 2;
+	private final static int MAP_HELP_CONF = 3;
+	private final static int MAP_WB_UPDATE = 4;
+	
+	// The agents active state
+	private ResMAPState state;
+
+	// Simulation 
 	private int[][] oldBoard;
 	private double disturbanceLevel;
 	
+	// Well being
+	public static double WLL;
+	private double[] agentsWellbeing;
+	private double lastSentWellbeing;
+	
+	// Bidding.  Used for communicating bid details.
 	private boolean bidding;
 	private int agentToHelp;
+	private RowCol helpeeNextCell;
 	private String bidMsg;
-	private int resAmountToGive;
+	private int helperAgent;
+	
+	// Team well-being counters
+	public static int cond1count = 0;
+	public static int cond2count = 0;
+	public static int cond3count = 0;
+	public static int cond21count = 0;
+	
+	// Team well-being broadcast counter
+	public static int twbbcast = 0;
 	
 	/**
 	 * The Constructor
@@ -57,11 +90,10 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	public ResourceMAPAgent(int id, CommMedium comMed) {
 		super(id, comMed);
-	
 	}
+
 	
-	/**
-	 * Initializes the agent for a new run.
+	/* Initializes the agent for a new run.
 	 * 
 	 * Called by Team.initializeRun()
 
@@ -84,7 +116,9 @@ public class ResourceMAPAgent extends Agent {
 		logInf("My goal position: " + goalPos().toString());	
 		
 		oldBoard = null;
-	
+		
+		agentsWellbeing = new double[Team.teamSize];
+		lastSentWellbeing = -1;
 	}
 	
 	/** 
@@ -106,13 +140,12 @@ public class ResourceMAPAgent extends Agent {
 		if (path() == null)
 		{		
 			findPath();			
-			logInf("Chose this path: "+ path().toString());
+			logInf("Initial Planning: Chose this path: "+ path().toString());
 		}
-		
 		
 		logInf("My current position: " + pos().toString());		
 		
-		state = RMAPState.S_INIT;
+		state = ResMAPState.S_INIT;
 		logInf("Set the inital state to +"+state.toString());
 		
 		setRoundAction(actionType.SKIP);
@@ -129,89 +162,137 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	@Override
 	protected AgCommStatCode sendCycle() {
+		
 		AgCommStatCode returnCode = AgCommStatCode.DONE;
 		logInf("Send Cycle");	
 		
 		switch(state) {
+		
 		case S_INIT:
-				if (reachedGoal()) {
-					logInf("Has reached the goal, nothing to check for myself.");
-					setState(RMAPState.R_GET_REQUESTS);
-				}
-				else {
-					RowCol nextCell = path().getNextPoint(pos());			
-					int nextCost = getCellCost(nextCell);
-					boolean needHelp = nextCost > resourcePoints();
+			double wellbeing = wellbeing();
+			double twb = teamWellbeing();
+			double twbSD = teamWellbeingStdDev();
+			logInf2("My wellbeing = " + wellbeing);
+			logInf2("Team wellbeing = "+twb);
+			logInf2("Team wellbeing std dev = " + twbSD);
+			
+			if (twb < 0.8 && twbSD < 0.5)
+				WLL -= 0.3;
+			if (twb > 0.8 && twbSD > 0.5)
+				WLL += 0.1;
+			if (twb > 0.8 && twbSD < 0.5)
+				WLL += 0.3;
+				
+			if (dbgInf2)
+			{
+				for(int i=0;i<Team.teamSize;i++)
+					System.out.println("Agent "+i+":"+agentsWellbeing[i]);
+			}
+			
+			if (reachedGoal())
+			{
+				if (Math.abs((wellbeing - lastSentWellbeing)/lastSentWellbeing) < EPSILON)
+					if (canBCast()) {
+					logInf2("Broadcasting my wellbeing to the team");
+					broadcastMsg(prepareWellbeingUpMsg(wellbeing));
+					}
+				setState(ResMAPState.R_GET_HELP_REQ);
+			}
+			
+			else 
+			{
+				RowCol nextCell = path().getNextPoint(pos());			
+				int cost = getCellCost(nextCell);
+				
+				boolean needHelp = (cost > resourcePoints()) || (cost > requestThreshold);
+				
+				if (cost > resourcePoints()) cond1count++;
+				if ((wellbeing < WLL && cost > lowCostThreshold)) cond2count++;
+				if (cost > requestThreshold) cond3count++;
+				if (wellbeing < WLL) cond21count++;
+				
+				if (needHelp)
+				{							
+					logInf2("Need help!");
 					
-					if (needHelp)
-					{							
-						logInf("Need help!");
-						
-						if (canCalc())
+					if (canCalc())
+					{
+						int teamBenefit = calcTeamBenefit(nextCell);
+					
+						if (canBCast())
 						{
-							int teamBenefit = calcTeamBenefit(nextCell);
-							int reqAmount = nextCost-resourcePoints();
-							if (canBCast())
-							{
-								logInf("Broadcasting help");
-								logInf("Team benefit of help would be "+teamBenefit);
-								logInf("The requested amount is: "+(reqAmount));
-								String helpReqMsg = prepareHelpReqMsg(teamBenefit,reqAmount);					
-								broadcastMsg(helpReqMsg);
-								setState(RMAPState.R_IGNORE_REQUESTS);
-							}
-							else
-								setState(RMAPState.R_BLOCKED);								
+							logInf("Broadcasting help");
+							logInf("Team benefit of help would be "+teamBenefit);
+							String helpReqMsg = prepareHelpReqMsg(teamBenefit,nextCell);					
+							broadcastMsg(helpReqMsg);
+							this.numOfHelpReq++;
+							setState(ResMAPState.R_IGNORE_HELP_REQ);
 						}
 						else
-							setState(RMAPState.R_BLOCKED);
+							setState(ResMAPState.R_BLOCKED);								
 					}
 					else
-					{
-						setState(RMAPState.R_GET_REQUESTS);
-					}
+						setState(ResMAPState.R_BLOCKED);
 				}
+				else
+				{
+					setState(ResMAPState.R_GET_HELP_REQ);
+				}
+			}			
 			break;
-		case S_RESPOND_TO_REQ:
-			RowCol nextCell = path().getNextPoint(pos());			
-			int nextCost = getCellCost(nextCell);
 			
-			if (bidding && canSend())
+		case S_RESPOND_TO_REQ:
+			if(bidding && canSend())
 			{
+				logInf("Sending a bid to agent"+agentToHelp);
 				sendMsg(agentToHelp, bidMsg);
-				setState(RMAPState.R_BIDDING);
+				this.numOfBids++;
+				setState(ResMAPState.R_BIDDING);
 			}
-			else if (!bidding && nextCost < resourcePoints())
-			{
-				setState(RMAPState.R_DO_OWN_ACT);
-			}
+			
 			else
 			{
-				setState(RMAPState.R_BLOCKED);
-			}
+				int cost = getCellCost(path().getNextPoint(pos()));
+				if (cost <= resourcePoints())
+					setState(ResMAPState.R_DO_OWN_ACT);
+				else
+					setState(ResMAPState.R_BLOCKED);
+			}							
 			break;
-		case S_SEEKING_HELP:
-			setState(RMAPState.R_GET_BIDS);
+			
+		case S_SEEK_HELP:
+			setState(ResMAPState.R_GET_BIDS);
 			break;
+			
 		case S_BIDDING:
-			setState(RMAPState.R_GET_BID_CONF);
+			setState(ResMAPState.R_GET_BID_CONF);
 			break;
+			
 		case S_DECIDE_OWN_ACT:
-			setState(RMAPState.R_DO_OWN_ACT);
+			 setState(ResMAPState.R_DO_OWN_ACT);	
 			break;
+			
 		case S_DECIDE_HELP_ACT:
-			setState(RMAPState.R_DO_HELP_ACT);
+			setState(ResMAPState.R_DO_HELP_ACT);
 			break;
+			
 		case S_RESPOND_BIDS:
-			int l = 0; // TODO: number of helping agents
-			if (canSend(l))
-				setState(RMAPState.R_ACCEPT_HELP_ACT);
+			if (canSend())
+			{
+				logInf("Confirming the help offer of agent "+ helperAgent);
+				String msg = prepareConfirmMsg(helperAgent);
+				sendMsg(helperAgent, msg);
+				setState(ResMAPState.R_ACCEPT_HELP_ACT); 
+			}
 			else
-				setState(RMAPState.R_BLOCKED);				
+				setState(ResMAPState.R_BLOCKED); 
+			/* should be checked if can not send ... */
 			break;
+			
 		case S_BLOCKED:
-			setState(RMAPState.R_BLOCKED);
-			break;	
+			setState(ResMAPState.R_BLOCKED);
+			break;
+			
 		default:
 			logErr("Unimplemented send state: " + state.toString());
 		}
@@ -231,7 +312,8 @@ public class ResourceMAPAgent extends Agent {
 		logInf("Receive Cycle");		
 	
 		switch (state) {
-		case R_GET_REQUESTS:
+		
+		case R_GET_HELP_REQ:			
 			ArrayList<Message> helpReqMsgs = new ArrayList<Message>();
 			
 			String msgStr = commMedium().receive(id());
@@ -239,76 +321,92 @@ public class ResourceMAPAgent extends Agent {
 			{
 				logInf("Received a message: " + msgStr);
 				Message msg = new Message(msgStr);				
-				if (msg.isOfType(RMAP_HELP_REQ_MSG))
+				if (msg.isOfType(MAP_HELP_REQ_MSG))
 						helpReqMsgs.add(msg);
+				else if (msg.isOfType(MAP_WB_UPDATE))
+				{
+					agentsWellbeing[msg.sender()] = msg.getDoubleValue("wellbeing");
+					logInf("Received agent "+msg.sender()+ "'s wellbeing = " +
+					agentsWellbeing[msg.sender()]);
+				}
 				 msgStr = commMedium().receive(id());
 			}
 			
 			bidding = false;
 			agentToHelp = -1;
-			bidMsg = "";
 			
 			if (helpReqMsgs.size() > 0)
 			{
 				logInf("Received "+helpReqMsgs.size()+" help requests");
 				
 				int maxNetTeamBenefit = Integer.MIN_VALUE;				
-				ArrayList<Integer> finalResOffers = new ArrayList<Integer>();
-				int finalCoef = -1;
 				
 				for (Message msg : helpReqMsgs)
 				{
+					agentsWellbeing[msg.sender()] = msg.getDoubleValue("wellbeing");
+					logInf("Received agent "+msg.sender()+ "'s wellbeing = " +
+					agentsWellbeing[msg.sender()]);
 					
-					//TODO: Deliberation
+					RowCol reqNextCell = 
+						new RowCol(msg.getIntValue("nextCellRow"), 
+								   msg.getIntValue("nextCellCol"));
 					
-					ArrayList<Integer> resOffers = new ArrayList<Integer>();
-					//ArrayList<Integer> coefList = new ArrayList<Integer>();
-					
-					int reqAmount = msg.getIntValue("reqAmount");
 					int teamBenefit = msg.getIntValue("teamBenefit");
-					int qi = teamBenefit/reqAmount;
-					int offer = reqAmount;
-					int maxCoef = -1;
-					while (offer > 1)
-					{
-						int teamLoss = calcTeamLoss(offer);
-						int coef = teamLoss/offer;
-						if (coef < qi)
-						{
-							resOffers.add(offer);
-							//coefList.add(coef);
-							if (coef > maxCoef)
-								maxCoef = coef;
-							
-							offer -= RESOURCE_OFFER_INTERVAL;
-						}
-					}
+					int requesterAgent = msg.sender();
+					int helpActCost = getCellCost(reqNextCell) + TeamTask.helpOverhead;
+					int teamLoss = -1;
+					int netTeamBenefit = -1;
 					
-					int NTB = teamBenefit - resOffers.get(0);
-					if (NTB > maxNetTeamBenefit)
+					if (canCalc()) //TODO: Revise this
 					{
-						maxNetTeamBenefit = NTB;
-						finalCoef = maxCoef;
-						finalResOffers = resOffers;
+						teamLoss = calcTeamLoss(helpActCost);
+						netTeamBenefit = teamBenefit - teamLoss;
+					}					
+					
+					logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
+							", NTB= "+netTeamBenefit);
+					
+					if (netTeamBenefit > 0 && 
+						netTeamBenefit > maxNetTeamBenefit &&
+						helpActCost < resourcePoints())
+					{
+						maxNetTeamBenefit = netTeamBenefit;
+						agentToHelp = requesterAgent;
+						helpeeNextCell = reqNextCell;
 					}
-										
 				}
-			
+				
 				if (agentToHelp != -1)
 				{					
 					logInf("Prepared to bid to help agent "+ agentToHelp);
-					bidMsg = prepareBidMsg(agentToHelp, finalResOffers, finalCoef);					
+					bidMsg = prepareBidMsg(agentToHelp, maxNetTeamBenefit);					
 					bidding = true;					
-				}	
+				}									
 			}
-			setState(RMAPState.S_RESPOND_TO_REQ);
+			setState(ResMAPState.S_RESPOND_TO_REQ);
 			break;
-		case R_IGNORE_REQUESTS:
-			setState(RMAPState.S_SEEKING_HELP);
+			
+		case R_IGNORE_HELP_REQ:
+			msgStr = commMedium().receive(id());
+			while (!msgStr.equals(""))
+			{
+				logInf("Received a message: " + msgStr);
+				Message msg = new Message(msgStr);				
+				if (msg.isOfType(MAP_WB_UPDATE) || msg.isOfType(MAP_HELP_REQ_MSG) )
+				{
+					agentsWellbeing[msg.sender()] = msg.getDoubleValue("wellbeing");
+					logInf("Received agent "+msg.sender()+ "'s wellbeing = " +
+					agentsWellbeing[msg.sender()]);
+				}
+				 msgStr = commMedium().receive(id());
+			}
+			setState(ResMAPState.S_SEEK_HELP);
 			break;
+			
 		case R_BIDDING:
-			setState(RMAPState.S_BIDDING);
+			setState(ResMAPState.S_BIDDING);
 			break;
+			
 		case R_GET_BIDS:
 			ArrayList<Message> bidMsgs = new ArrayList<Message>();
 			
@@ -317,40 +415,60 @@ public class ResourceMAPAgent extends Agent {
 			{
 				logInf("Received a message: " + msgStr);
 				Message msg = new Message(msgStr);				
-				if (msg.isOfType(RMAP_BID_MSG))
+				if (msg.isOfType(MAP_BID_MSG))
 					bidMsgs.add(msg);
 				 msgStr = commMedium().receive(id());
 			}
 			
+			helperAgent = -1;
+			
 			if (bidMsgs.size() == 0)
-			{
-				RowCol nextCell = path().getNextPoint(pos());			
-				int nextCost = getCellCost(nextCell);
-				if (nextCost <= resourcePoints())
-					setState(RMAPState.S_DECIDE_OWN_ACT);
+			{							
+				/* TODO: this may not be necessary as it will be checked
+				 * in the R_DO_OWN_ACT
+				 */
+				this.numOfUnSucHelpReq++;
+				int cost = getCellCost(path().getNextPoint(pos()));
+				if (cost <= resourcePoints())
+					setState(ResMAPState.S_DECIDE_OWN_ACT);
 				else
-					setState(RMAPState.S_BLOCKED);
+					setState(ResMAPState.S_BLOCKED);
 			}
 			else
 			{
-				//TODO:
-				
-				setState(RMAPState.S_RESPOND_BIDS);
-			}
+				logInf("Received "+bidMsgs.size()+" bids.");
+				int maxBid = Integer.MIN_VALUE;					
+				for (Message bid : bidMsgs)
+				{
+					int bidNTB = bid.getIntValue("NTB");
+					int offererAgent = bid.sender();
+					
+					if (bidNTB > maxBid)
+					{
+						maxBid = bidNTB;
+						helperAgent = offererAgent;
+					}
+				}
+				logInf("Agent "+ helperAgent+" won the bidding.");
+				setState(ResMAPState.S_RESPOND_BIDS);
+			}		
 			break;
+			
 		case R_BLOCKED:
 			//TODO: ? skip the action
 			// or forfeit
 			setRoundAction(actionType.FORFEIT);
 			break;
+			
 		case R_GET_BID_CONF:
 			msgStr = commMedium().receive(id());
 			
 			if (!msgStr.equals("") && 
-					(new Message(msgStr)).isOfType(RMAP_HELP_CONF) )				
+					(new Message(msgStr)).isOfType(MAP_HELP_CONF) )				
 			{
 				logInf("Received confirmation");
-				setState(RMAPState.S_DECIDE_HELP_ACT);
+				this.numOfSucOffers++;
+				setState(ResMAPState.S_DECIDE_HELP_ACT);
 			}
 			else
 			{
@@ -358,13 +476,16 @@ public class ResourceMAPAgent extends Agent {
 				RowCol nextCell = path().getNextPoint(pos());			
 				int nextCost = getCellCost(nextCell);
 				if (nextCost <= resourcePoints())
-					setState(RMAPState.S_DECIDE_OWN_ACT);
+					setState(ResMAPState.S_DECIDE_OWN_ACT);
 				else
-					setState(RMAPState.S_BLOCKED);							
+					setState(ResMAPState.S_BLOCKED);								
 			}
 			break;
+			
 		case R_DO_OWN_ACT:
-			if (!reachedGoal())
+			//TODO: Check this
+			int cost = getCellCost(path().getNextPoint(pos()));			
+			if (!reachedGoal() && cost <= resourcePoints())
 			{
 				logInf("Will do my own move.");
 				setRoundAction(actionType.OWN);
@@ -375,14 +496,17 @@ public class ResourceMAPAgent extends Agent {
 				setRoundAction(actionType.SKIP);
 			}
 			break;
+			
 		case R_DO_HELP_ACT:
 			logInf("Will help another agent");
 			setRoundAction(actionType.HELP_ANOTHER);
 			break;
+			
 		case R_ACCEPT_HELP_ACT:
 			logInf("Will receive help");
 			setRoundAction(actionType.HAS_HELP);
-			break;	
+			break;
+			
 		default:			
 			logErr("Unimplemented receive state: " + state.toString());
 		}
@@ -390,7 +514,348 @@ public class ResourceMAPAgent extends Agent {
 		if (isInFinalState())
 			returnCode = AgCommStatCode.DONE;
 		
-		return returnCode;		
+		return returnCode;
+	}
+	
+
+	/**
+	 * Finalizes the round by moving the agent.
+	 * 
+	 * Also determines the current state of the agent which can be
+	 * reached the goal, blocked, or ready for next round.  
+	 * 
+	 * @return 						Returns the current state 
+	 */
+	@Override
+	protected AgGameStatCode finalizeRound() {			
+		logInf("Finalizing the round ...");				
+				
+		keepBoard();
+		
+		boolean succeed = act();
+		
+		if (reachedGoal())
+		{
+			logInf("Reached the goal");
+			return AgGameStatCode.REACHED_GOAL;
+		}
+		else
+		{
+			if (succeed) 
+				return AgGameStatCode.READY;
+			else  /*TODO: The logic here should be changed!*/
+			{
+				logInf("Blocked!");
+				return AgGameStatCode.BLOCKED;			
+			}
+		}					
+	}
+
+	/**
+	 * Calculates the team well being
+	 *
+	 * @return Team well being
+	 */
+	private double teamWellbeing()
+	{
+		double sum = 0;
+		agentsWellbeing[id()] = wellbeing();
+		for (double w : agentsWellbeing)
+			sum+=w;
+
+		return sum/agentsWellbeing.length;
+	}
+
+	/**
+	* Calculates the standard deviation of the team's well being
+	*
+	* @return Standard deviation of the team's well being
+	*/
+	private double teamWellbeingStdDev() {
+
+		double tw = teamWellbeing();
+
+		double sum = 0;
+		for (double w : agentsWellbeing)
+		{
+			sum+= (w-tw)*(w-tw);
+		}
+		
+		return Math.sqrt(sum/agentsWellbeing.length);
+	}
+	
+	/**
+	 * Calculates the disturbance level of the board.
+	 * 
+	 * This compares the current state of the board with the stored state
+	 * from the previous round.
+	 * 
+	 * @return				The level of disturbance.
+	 */
+	private double calcDistrubanceLevel() {
+		if (oldBoard == null)
+			return 0.0;
+		
+		int changeCount = 0;		
+		for (int i=0;i<theBoard().rows();i++)
+			for (int j=0;j<theBoard().cols();j++)
+				if (theBoard().getBoard()[i][j] != oldBoard[i][j])
+					changeCount++;	
+		
+		return (double)changeCount / (theBoard().rows() * theBoard().cols());
+	}
+	
+	/**
+	 * Keeps the current state of the board for calculating the disturbance
+	 * in the next round of the game.
+	 * 
+	 * This copied theBoard into oldBoard. 
+	 */
+	private void keepBoard() {
+		
+		int rows = theBoard().rows();
+		int cols = theBoard().cols();
+		
+		if (oldBoard == null) /* first round */
+			oldBoard = new int[rows][cols];
+		
+		for (int i=0;i<rows;i++)
+			for (int j=0;j<cols;j++)
+				oldBoard[i][j] = theBoard().getBoard()[i][j];	
+	}
+	
+	/**
+	 * Calculated the estimated cost for the agent to move through path p.
+	 * 
+	 * @param p						The agent's path
+	 * @return						The estimated cost
+	 */
+	private double estimatedCost(Path p) {		
+		
+		int l = p.getNumPoints();
+		double sigma = 1 - disturbanceLevel;
+		double eCost = 0.0;		
+		if (Math.abs(sigma-1) < 0.000001)
+		{
+			for (int k=0;k<l;k++)
+				eCost += getCellCost(p.getNthPoint(k));			
+		}
+		else
+		{
+			double m = getAverage(actionCosts()); /*TODO: check this! */				 
+			eCost = (l - ((1-Math.pow(sigma, l))/(1-sigma))) * m;		
+			for (int k=0;k<l;k++)
+				eCost += Math.pow(sigma, k) * getCellCost(p.getNthPoint(k));
+		}
+		return eCost;
+	}
+	
+	/**
+	 * Calculates the agent's wellbeing.
+	 * 
+	 * @return						The agent's wellbeing
+	 */
+	protected double wellbeing() {		
+		double eCost = estimatedCost(remainingPath(pos()));
+		if (eCost == 0)
+			return resourcePoints();
+		else
+			return (double)resourcePoints()/eCost;
+	}
+	
+	/**
+	 * Finds the remaining path from the given cell.
+	 * 
+	 * The path DOES NOT include the given cell and the starting cell 
+	 * of the remaining path would be the next cell.
+	 * 
+	 * @param from					The cell the remaining path would be
+	 * 								generated from.
+	 * @return						The remaining path.
+	 */
+	private Path remainingPath(RowCol from) {
+		Path rp = new Path(path());
+		
+		while (!rp.getStartPoint().equals(from))
+			rp = rp.tail();
+		
+		return rp.tail();
+	}
+	
+	
+	/**
+	 * Finds the final position of the agent assuming using the
+	 * given resource points.
+	 * 
+	 * @param remainingResourcePoints			The amount of resource points
+	 * 											the agent can use.
+	 * @return									The index of the agent's position
+	 * 											on the path, consumed all the resources;
+	 * 											staring from 0.
+	 */
+	private int findFinalPos(int remainingResourcePoints, RowCol startPos) {
+		
+		if (path().getEndPoint().equals(startPos))
+			return path().getIndexOf(startPos);
+			
+		RowCol iCell = path().getNextPoint(startPos);		
+		int iIndex = path().getIndexOf(iCell);
+		
+		double m = getAverage(actionCosts()); /*TODO: check this! */			
+		
+		while (iIndex < path().getNumPoints())
+		{
+		
+			int jIndex = iIndex - path().getIndexOf(startPos);
+			
+			double sigma = 1 - disturbanceLevel;
+			
+			double eCost =  ((1-Math.pow(sigma, jIndex))) * m;		
+				eCost += Math.pow(sigma, jIndex) * getCellCost(path().getNthPoint(iIndex));
+			
+			//int cost = getCellCost(iCell);
+			if (eCost <= remainingResourcePoints)
+			{
+				remainingResourcePoints-=eCost;
+				iCell=path().getNextPoint(iCell);
+				iIndex++;
+			}
+			else
+			{
+				iCell = path().getNthPoint(iIndex-1);		
+				break;
+			}
+		}		
+		
+		return path().getIndexOf(iCell);
+	}
+	
+	/**
+	 * Estimates the agent's reward points at the end of the game.
+	 * 
+	 * Estimates the agent's reward points at the end of the game assuming having
+	 * the given resources points left and being the the specified position.
+	 * 
+	 * @param remainingResourcePoints			The assumed remaining resource
+	 * 											points 
+	 * @param startPos							The position which the agent
+	 * 											starts to move along the path.	
+	 * @return									The estimated reward points
+	 */
+	private int projectRewardPoints(int remainingResourcePoints, RowCol startPos) {
+		
+		if (path().getEndPoint().equals(startPos))
+			return calcRewardPoints(remainingResourcePoints, startPos);
+		
+		RowCol iCell = path().getNextPoint(startPos);		
+		int iIndex = path().getIndexOf(iCell);
+		
+		double m = getAverage(actionCosts()); /*TODO: check this! */	
+		
+		while (iIndex < path().getNumPoints())
+		{							
+			int jIndex = iIndex - path().getIndexOf(startPos);
+			
+			double sigma = 1 - disturbanceLevel;
+			
+			double eCost =  ((1-Math.pow(sigma, jIndex))) * m;		
+				eCost += Math.pow(sigma, jIndex) * getCellCost(path().getNthPoint(iIndex));
+				
+			if (eCost <= remainingResourcePoints)
+			{
+				remainingResourcePoints-=eCost;
+				iCell=path().getNextPoint(iCell);
+				iIndex++;
+			}
+			else
+			{
+				iCell = path().getNthPoint(iIndex-1);		
+				break;
+			}
+		}		
+		
+		return calcRewardPoints(remainingResourcePoints, iCell);
+	}
+	
+	/**
+	 * The importance function.
+	 * 
+	 * Maps the remaining distance to the goal into 
+	 * 
+	 * Currently: imp(x) = 100/x
+	 * 
+	 * @param remainingLength
+	 * @return
+	 */
+	private int importance(int remainingLength) {
+		remainingLength ++; /* TODO: double check */
+		if (remainingLength != 0)
+			return 100/remainingLength;
+		else
+			return 0;
+	}
+	
+	/**
+	 * Prepares a help request message and returns its String encoding.
+	 * 
+	 * @param teamBenefit			The team benefit to be included in
+	 * 								the message.
+	 * @return						The message encoded in String
+	 */
+	private String prepareHelpReqMsg(int teamBenefit, RowCol helpCell) {
+		
+		Message helpReq = new Message(id(),-1,MAP_HELP_REQ_MSG);
+		helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
+		helpReq.putTuple("nextCellRow", helpCell.row);
+		helpReq.putTuple("nextCellCol", helpCell.col);
+		
+		Double w = wellbeing();
+		helpReq.putTuple("wellbeing", Double.toString(w));
+		lastSentWellbeing = w;
+		
+		return helpReq.toString();
+	}
+	
+	/**
+	 * Prepares a help request message and returns its String encoding.
+	 * 
+	 * @param teamBenefit			The team benefit to be included in
+	 * 								the message.
+	 * @return						The message encoded in String
+	 */
+	private String prepareWellbeingUpMsg(double w) {
+		
+		Message wu = new Message(id(),-1,MAP_WB_UPDATE);
+		
+		wu.putTuple("wellbeing", Double.toString(w));
+		lastSentWellbeing = w;
+		
+		return wu.toString();
+	}
+	
+	/**
+	 * Prepares a bid message and returns its String encoding.
+	 * 
+	 * @param requester				The help requester agent
+	 * @param NTB					The net team benefit
+	 * @return						The message encoded in String
+	 */
+	private String prepareBidMsg(int requester, int NTB) {
+		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
+		bidMsg.putTuple("NTB", NTB);
+		return bidMsg.toString();
+	}
+	
+	/**
+	 * Prepares a help confirmation message returns its String 
+	 * encoding.
+	 * 
+	 * @param helper				The helper agent
+	 * @return						The message encoded in String
+	 */
+	private String prepareConfirmMsg(int helper) {
+		Message confMsg = new Message(id(),helper,MAP_HELP_CONF);
+		return confMsg.toString();
 	}
 	
 	/**
@@ -467,132 +932,84 @@ public class ResourceMAPAgent extends Agent {
 	}
 	
 	/**
-	 * Finds the final position of the agent assuming using the
-	 * given resource points.
+	 * Enables the agent to perform its own action. 
 	 * 
-	 * @param remainingResourcePoints			The amount of resource points
-	 * 											the agent can use.
-	 * @return									The index of the agent's position
-	 * 											on the path, consumed all the resources;
-	 * 											staring from 0.
+	 * To be overriden by the agent if necessary.
+	 * 
+	 * @return						true if successful/false o.w.
 	 */
-	private int findFinalPos(int remainingResourcePoints, RowCol startPos) {
-		
-		if (path().getEndPoint().equals(startPos))
-			return path().getIndexOf(startPos);
-			
-		RowCol iCell = path().getNextPoint(startPos);		
-		int iIndex = path().getIndexOf(iCell);
-		
-		while (iIndex < path().getNumPoints())
-		{
-			int cost = getCellCost(iCell);
-			if (cost <= remainingResourcePoints)
-			{
-				remainingResourcePoints-=cost;
-				iCell=path().getNextPoint(iCell);
-				iIndex++;
-			}
-			else
-			{
-				iCell = path().getNthPoint(iIndex-1);		
-				break;
-			}
-		}		
-		
-		return path().getIndexOf(iCell);
-	}
-	
-	/**
-	 * Estimates the agent's reward points at the end of the game.
-	 * 
-	 * Estimates the agent's reward points at the end of the game assuming having
-	 * the given resources points left and being the the specified position.
-	 * 
-	 * @param remainingResourcePoints			The assumed remaining resource
-	 * 											points 
-	 * @param startPos							The position which the agent
-	 * 											starts to move along the path.	
-	 * @return									The estimated reward points
-	 */
-	private int projectRewardPoints(int remainingResourcePoints, RowCol startPos) {
-		
-		if (path().getEndPoint().equals(startPos))
-			return calcRewardPoints(remainingResourcePoints, startPos);
-		
-		RowCol iCell = path().getNextPoint(startPos);		
-		int iIndex = path().getIndexOf(iCell);
-		
-		while (iIndex < path().getNumPoints())
-		{							
-			int cost = getCellCost(iCell);
-			if (cost <= remainingResourcePoints)
-			{
-				remainingResourcePoints-=cost;
-				iCell=path().getNextPoint(iCell);
-				iIndex++;
-			}
-			else
-			{
-				iCell = path().getNthPoint(iIndex-1);		
-				break;
-			}
-		}		
-		
-		return calcRewardPoints(remainingResourcePoints, iCell);
-	}
-	
-	/**
-	 * The importance function.
-	 * 
-	 * Maps the remaining distance to the goal into 
-	 * 
-	 * Currently: imp(x) = 100/x
-	 * 
-	 * @param remainingLength
-	 * @return
-	 */
-	private int importance(int remainingLength) {
-		remainingLength ++; /* TODO: double check */
-		if (remainingLength != 0)
-			return 100/remainingLength;
+	@Override
+	protected boolean doOwnAction() {
+		RowCol nextCell = path().getNextPoint(pos());
+		int cost = getCellCost(nextCell);
+		logInf("Should do my own move!");
+		if (resourcePoints() >= cost )
+		{			
+			decResourcePoints(cost);
+			setPos(nextCell);
+			logInf("Moved to " + pos().toString());
+			return true;
+		}
 		else
-			return 0;
+		{
+			logErr("Could not do my own move :(");
+			return false;
+		}
 	}
 	
 	/**
-	 * Calculates the disturbance level of the board.
+	 * Enables the agent to perform an action on behalf of another 
+	 * agent (Help). 
 	 * 
-	 * This compares the current state of the board with the stored state
-	 * from the previous round.
+	 * To be overriden by the agent if necessary.
 	 * 
-	 * @return				The level of disturbance.
+	 * @return						true if successful/false o.w.
 	 */
-	private double calcDistrubanceLevel() {
-		if (oldBoard == null)
-			return 0.0;
+	@Override
+	protected boolean doHelpAnother() {
+		boolean result;		
+		int cost = getCellCost(helpeeNextCell);			
+		logInf("Should help agent "+agentToHelp);
 		
-		int changeCount = 0;		
-		for (int i=0;i<theBoard().rows();i++)
-			for (int j=0;j<theBoard().cols();j++)
-				if (theBoard().getBoard()[i][j] != oldBoard[i][j])
-					changeCount++;	
+		if (resourcePoints() >= cost )
+		{			
+			logInf("Helped agent " + agentToHelp);
+			decResourcePoints(cost);			
+			result = true;
+			//Denish, 2014/03/30
+			setLastAction("Helped:" + (agentToHelp + 1));
+		}
+		else
+		{
+			logErr(""+resourcePoints());
+			logErr(""+cost);
+			logErr("Failed to help :(");
+			//Denish, 2014/03/30
+			setLastAction("Failed Help:" + (agentToHelp + 1));
+			result = false;
+		}
+		helpeeNextCell = null;
+		agentToHelp = -1;
 		
-		return (double)changeCount / (theBoard().rows() * theBoard().cols());
+		return result;
 	}
 	
 	/**
-	 * Prepares a help request message and returns its String encoding.
+	 * Enables the agent do any bookkeeping while receiving help.
 	 * 
-	 * @param teamBenefit			The team benefit to be included in
-	 * 								the message.
-	 * @return						The message encoded in String
+	 * To be overriden by the agent if necessary.
+	 * 
+	 * @return						true if successful/false o.w.
 	 */
-	private String prepareHelpReqMsg(int teamBenefit, int reqAmount) {				
-		Message helpReq = new Message(id(),-1,RMAP_HELP_REQ_MSG);
-		helpReq.putTuple("reqAmount", Integer.toString(reqAmount));
-		helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
-		return helpReq.toString();
+	@Override
+	protected boolean doGetHelpAction() {
+		RowCol nextCell = path().getNextPoint(pos());
+		logInf("Yaay! Agent"+ helperAgent+" is helping me with this move!");
+		setPos(nextCell);
+		//Denish, 2014/03/30
+		setLastAction("Helped by:" + (helperAgent + 1));
+		helperAgent = -1;
+		return true;
 	}
 	
 	/**
@@ -603,7 +1020,7 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private boolean isInFinalState() {
 		switch (state) {
-			case R_ACCEPT_HELP_ACT:
+			case R_ACCEPT_HELP_ACT:  //Might not need this?
 			case R_DO_HELP_ACT:
 			case R_DO_OWN_ACT:
 			case R_BLOCKED:
@@ -613,25 +1030,7 @@ public class ResourceMAPAgent extends Agent {
 		}
 	}	
 	
-	/**
-	 * Prepares a bid message and returns its String encoding.
-	 * 
-	 * @param requester				The help requester agent
-	 * @param NTB					The net team benefit
-	 * @return						The message encoded in String
-	 */
-	private String prepareBidMsg(int requester, ArrayList<Integer> resOffers, int coef) {
-		String offers = Integer.toString(resOffers.get(0));
-		for (int o : resOffers)
-			offers += "," + o ;
-		
-		Message bidMsg = new Message(id(),requester,RMAP_BID_MSG);
-		bidMsg.putTuple("amounts", offers);
-		bidMsg.putTuple("coef", coef);
-		return bidMsg.toString();
-	}
-	
-	/*************************************************************/
+	/*******************************************************************/
 	
 	/**
 	 * Tells whether the agent has enough resources to send a unicast
@@ -642,17 +1041,6 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private boolean canSend() {
 		return (resourcePoints() >= Team.unicastCost);	
-	}
-	
-	/**
-	 * Tells whether the agent has enough resources to send n unicast
-	 * messages or not
-	 * 
-	 * @return 					true if there are enough resources /
-	 * 							false if there aren't enough resources	
-	 */
-	private boolean canSend(int n) {
-		return (resourcePoints() >= Team.unicastCost * n);	
 	}
 	
 	/**
@@ -699,11 +1087,23 @@ public class ResourceMAPAgent extends Agent {
 	}
 	
 	/**
+	 * Calculates the average of the given integer array.
+	 * 
+	 * @return						The average.
+	 */
+	private double getAverage(int[] array) {
+		int sum = 0;
+		for (int i=0;i<array.length;i++)
+			sum+=array[i];
+		return (double)sum/array.length;
+	}
+	
+	/**
 	 * Changes the current state of the agents state machine.
 	 * 
 	 * @param newState				The new state
 	 */
-	private void setState(RMAPState newState) {
+	private void setState(ResMAPState newState) {
 		logInf("In "+ state.toString() +" state");
 		state = newState;
 		logInf("Set the state to +"+state.toString());
@@ -718,9 +1118,20 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	protected void logInf(String msg) {
 		if (dbgInf)
-			System.out.println("[ResourceMAP Agent " + id() + "]: " + msg);
+			System.out.println("[AdvActionMAP2 Agent " + id() + "]: " + msg);
 		//Denish, 2014/03/30
 		super.logInf(msg);
+	}
+	
+	/**
+	 * Prints the log message into the output if the information debugging 
+	 * level is turned on (debuggingInf).
+	 * 
+	 * @param msg					The desired message to be printed
+	 */
+	private void logInf2(String msg) {
+		if (dbgInf2)
+			System.err.println("[AdvActionMAP2 Agent " + id() + "]: " + msg);
 	}
 	
 	/**
@@ -731,8 +1142,7 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private void logErr(String msg) {
 		if (dbgErr)
-			System.out.println("[xxxxxxxxxxx][ResourceMAP Agent " + id() + 
+			System.out.println("[xxxxxxxxxxx][AdvActionMAP2 Agent " + id() + 
 							   "]: " + msg);
 	}
-
 }

@@ -1,6 +1,13 @@
 package massim.agents.resourcemap;
 
+/**
+ * ResourceMAP Team
+ * 
+ * @author Devin Calado 
+ */
+
 import massim.Team;
+import massim.agents.advancedactionmap.AdvActionMAPRepAgent;
 
 public class ResourceMAPTeam extends Team {
 	/**
@@ -16,4 +23,7 @@ public class ResourceMAPTeam extends Team {
 
 		setAgents(resourceMAPAgents);
 	}
+	
+
+	
 }

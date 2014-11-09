@@ -16,7 +16,7 @@ import massim.agents.resourcemap.ResourceMAPTeam;
 
 import java.util.*;
 
-import experiments.tools.CsvTool;
+import experiments.datatools.CsvTool;
 
 /**
  * Experiment for comparing resource MAP to other MAP's
@@ -101,7 +101,7 @@ public class ResourceExp {
 								"Re-plan Count",
 								"Score Difference",
 								"ResourceMAP Score",
-								"ResourceMAP Re-Plan Opt Score"
+								"ResourceMAP Opt Score"
 								};
 		
 		
@@ -148,7 +148,8 @@ public class ResourceExp {
 			// Resource MAP, optimized assignment
 			teams[9] = new ResourceMAPTeam();
 			teams[9].setOptimumAssign(true);
-
+			//((ResourceMAPTeam)teams[9]).setUseSwap(false);
+			
 			/* Create the SimulationEngine */
 			SimulationEngine se = new SimulationEngine(teams);
 

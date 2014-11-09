@@ -19,6 +19,8 @@ import massim.TeamTask;
  * 
  * 
  */
+
+
 public class AdvActionMAPRepAgent extends Agent {
 
 	boolean dbgInf = false;
@@ -37,7 +39,7 @@ public class AdvActionMAPRepAgent extends Agent {
 		S_PRE_INIT, R_PRE_INIT,
 		
 		//Denish, 2014/04/26, for swap
-		R_INIT, S_INIT_SW, S_INIT_HP,
+		R_INIT,	S_INIT_SW, S_INIT_HP,
 		SW_R_GET_REQ, SW_S_AWAIT_RESPONSE,
 		SW_R_GET_BIDS, SW_S_RESPOND_TO_REQ,
 		SW_S_ANNOUNCE, SW_R_AWAIT_OUTCOME, SW_S_AWAIT_OUTCOME,
