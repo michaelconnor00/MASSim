@@ -165,6 +165,8 @@ public class ResourceExp {
 			TeamTask.achievementReward = 2000;
 			TeamTask.initResCoef = 160;
 
+			TeamTask.resourceAssistanceOverhead = 10;
+			
 			/* Set the Team Attributes */
 			
 			NoHelpRepAgent.WREP = -0.25;

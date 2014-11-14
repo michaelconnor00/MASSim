@@ -15,6 +15,7 @@ public class TeamTask {
 	public static int assignmentOverhead;
 	public static int swapOverhead;
 	public static int leaderResources;
+	public static int resourceAssistanceOverhead;
 	
 	public RowCol[] goalPos;
 	public RowCol[] startPos;

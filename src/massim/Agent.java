@@ -53,7 +53,7 @@ public abstract class Agent {
 	public int numOfBids = 0;
 	public int numOfSucOffers = 0;
 	public int numOfUnSucHelpReq = 0;
-	public boolean remainingResInRewards = false;
+	public boolean remainingResInRewards = false;  
 	public int numOfSwapSuccess = 0;
 	public int numOfSwapReq = 0;
 	public int numOfSwapBid = 0;
