@@ -297,7 +297,6 @@ public class ResourceMAPAgent extends Agent {
 				
 				// This send message will need to respond with unused resources (resources we can give back)
 				
-				
 				setState(ResMAPState.R_ACCEPT_HELP_ACT); 
 			}
 			else
@@ -469,6 +468,8 @@ public class ResourceMAPAgent extends Agent {
 					}
 				}
 				
+				// Prepare response messages for all bidding agents (mainly, how much resources to return)
+				// Create a global array to be used in S_RESPOND_BIDS...
 				
 				logInf(helperAgents.size() +" agents have won the bidding. (Will be providing assistance)");
 				setState(ResMAPState.S_RESPOND_BIDS);
@@ -482,10 +483,14 @@ public class ResourceMAPAgent extends Agent {
 			break;
 			
 		case R_GET_BID_CONF:
+			
+			// Recieve bid confirmation and add returned resources to agent's resources.
+			
 			msgStr = commMedium().receive(id());
 			
 			if (!msgStr.equals("") && (new Message(msgStr)).isOfType(MAP_HELP_CONF))				
 			{
+				//int returnedResources;  // resources to be re-added to an agents available resources
 				logInf("Received confirmation, my resource offering was used.");  // Output information about full or partial resource use
 				this.numOfSucOffers++;
 				//setState(ResMAPState.S_DECIDE_HELP_ACT);
