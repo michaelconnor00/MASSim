@@ -15,7 +15,7 @@ import massim.TeamTask;
 
 
 /**
- * Resource MAP Agent.  Uses Team Well-being.  No re-planning.
+ * Resource MAP Agent. No re-planning.
  * 
  * @author Devin Calado, Michael Conner
  * @version 1.0 - November 2014
@@ -27,7 +27,20 @@ public class ResourceMAPAgent extends Agent {
 	boolean dbgInf = false;
 	boolean dbgErr = true;
 	boolean dbgInf2 = false;
-	
+
+
+	// Parameters:
+
+	// Request and cost thresholds
+	public static double requestThreshold;
+	public static double lowCostThreshold;
+	public static double EPSILON;
+
+	// Resource MAP toggles
+	public static boolean canSacrifice;
+	public static boolean multipleBids;
+
+
 	// Agent states
 	private enum ResMAPState {
 		S_INIT, 
@@ -39,10 +52,7 @@ public class ResourceMAPAgent extends Agent {
 		R_GET_BID_CONF
 	}
 	
-	// Request and cost thresholds
-	public static double requestThreshold;
-	public static double lowCostThreshold;
-	public static double EPSILON;
+
 	
 	// Message types for MAP
 	private final static int MAP_HELP_REQ_MSG = 1;
@@ -74,17 +84,16 @@ public class ResourceMAPAgent extends Agent {
 	public static int cond2count = 0;
 	public static int cond3count = 0;
 	public static int cond21count = 0;
+
 	
-	// Team well-being broadcast counter
-	public static int twbbcast = 0;
-	
-	// Custom Comparator
-	public static Comparator<Message> resourceAmountOrder;
-	public static Comparator<Message> teamBenefitOrder;
-	
+	// Custom Comparators
+	private static Comparator<Message> resourceAmountOrder;
+	private static Comparator<Message> teamBenefitOrder;
+	private static Comparator<Message> estimatedCostToGoalOrder;
+	private static Comparator<Message> averageStepCostOrder;
 	/**
 	 * The Constructor
-	 * 
+	 *
 	 * @param id					The agent's id; to be passed
 	 * 								by the team.
 	 * @param comMed				The instance of the team's 
@@ -106,14 +115,29 @@ public class ResourceMAPAgent extends Agent {
                 return Integer.compare(m2.getIntValue("teamBenefit"), m1.getIntValue("teamBenefit"));
             }
         };
+
+		estimatedCostToGoalOrder = new Comparator<Message>() {
+			@Override
+			public int compare(Message m1, Message m2) {
+				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+			}
+		};
+
+		averageStepCostOrder = new Comparator<Message>() {
+			@Override
+			public int compare(Message m1, Message m2) {
+				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+			}
+		};
+
 	}
 
-	
+
 	/* Initializes the agent for a new run.
-	 * 
+	 *
 	 * Called by Team.initializeRun()
 
-	 * 
+	 *
 	 * @param tt						The team task setting
 	 * @param subtaskAssignments		The subtask assignments for the team.
 	 * @param initResourcePoints		The initial resource points given
@@ -237,11 +261,7 @@ public class ResourceMAPAgent extends Agent {
 						int teamBenefit = calcTeamBenefit(); 
 						logInf("Broadcasting help");
 						logInf("Team benefit of help would be " + teamBenefit);
-						// String helpReqMsg =
-						// prepareHelpReqMsg(teamBenefit,nextCell);
-						
-						// prepareHelpReqMsg requires: (int stepsToGoal, int estimatedCostToGoal, int averageCellCost)
-						String helpReqMsg = prepareHelpReqMsg(teamBenefit, (int) estimatedCost(path));
+						String helpReqMsg = prepareHelpReqMsg(remainingPath(pos()).getNumPoints(), estimatedCost(path), getAverage(actionCosts()), getCellCost(path().getNextPoint(pos())));
 						broadcastMsg(helpReqMsg);
 						this.numOfHelpReq++;
 						setState(ResMAPState.R_IGNORE_HELP_REQ);
@@ -260,7 +280,7 @@ public class ResourceMAPAgent extends Agent {
 			if(bidding && canSend())
 			{
 				for (Message msg : bidMsgs){
-					logInf("Sending a bid to agent" + msg.getIntValue("requester")); // Requester was previously agentToHelp..
+					logInf("Sending a bid to agent" + msg.getIntValue("requester"));
 					sendMsg(msg.getIntValue("requester"), msg.toString());
 					this.numOfBids++;
 				}
@@ -303,7 +323,7 @@ public class ResourceMAPAgent extends Agent {
 					sendMsg(helperAgents.get(i), messages[i].toString());
 				}
 				
-				// This send message will need to respond with unused resources (resources we can give back)
+				// This send message will need to respond with unused resources (resources we can give back)? maybe not
 				
 				setState(ResMAPState.R_DO_OWN_ACT);
 			}
@@ -355,8 +375,9 @@ public class ResourceMAPAgent extends Agent {
 				}
 				 msgStr = commMedium().receive(id());
 			}
-			
-			Collections.sort(helpReqMsgs, teamBenefitOrder);
+
+			// Sort help request messages from cheapest cost to goal to most expensive
+			Collections.sort(helpReqMsgs, estimatedCostToGoalOrder);
 			
 			bidding = false;
 			
@@ -367,44 +388,61 @@ public class ResourceMAPAgent extends Agent {
 				bidMsgs = new ArrayList();
 
 				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
-				int myNetTeamBenefit = 0;
+
+//				int myNetTeamBenefit = 0;
+//
+//				if (canCalc())
+//					myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
+//
 				
-				if (canCalc())
-					myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
-	
-				
-				// loop through agents in need of help.  Help msgs are sorted in descending order of teamBenefit				
-				for (int i = 0; (i < helpReqMsgs.size()) && (!helpReqMsgs.isEmpty() && myMaxAssistance <= 0); i++)
+				// loop through agents in need of help. Messages are sorted in ascending order of eCostToGoal
+				//for (int i = 0; (i < helpReqMsgs.size()) && (!helpReqMsgs.isEmpty() && myMaxAssistance <= 0); i++)
+				//{
+
+				// Agents are sorted by cheapest estimated cost to goal.
+				for (int i = 0; (i < helpReqMsgs.size()) && canSacrifice && !bidding; i++)
 				{
-					
-					int teamBenefit = helpReqMsgs.get(i).getIntValue("teamBenefit");
+
+					Double reqECostToGoal = helpReqMsgs.get(i).getDoubleValue("eCostToGoal");
+					int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
+					Double reqRemainingStepAvgCost = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
+					int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost");
 					int requesterAgent = helpReqMsgs.get(i).sender();
-					int resourcesRequested = helpReqMsgs.get(i).getIntValue("requiredResources");
-					int teamLoss = -1;
-					int netTeamBenefit = -1;
-					
-					if (canCalc())
-					{
-						teamLoss = calcTeamLoss(myMaxAssistance);
-						netTeamBenefit = teamBenefit - teamLoss;
-					}
+
+					// NEW APPROACH:
 
 
-					logInf("For agent " + requesterAgent + ", team loss= " + teamLoss + ", NTB= " + netTeamBenefit);
-
-					if (netTeamBenefit >= myNetTeamBenefit) {
-						logInf("Prepared to bid to help agent " + requesterAgent);
-						if (resourcesRequested < resourcePoints)
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested, wellbeing()));
-						else
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcePoints, wellbeing()));
-						if (resourcesRequested > myMaxAssistance)
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, myMaxAssistance, wellbeing()));
-						else
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested, wellbeing()));
-						bidding = true;
-					} 	
 				}
+
+
+					// OLD APPROACH:
+
+					//int teamBenefit = helpReqMsgs.get(i).getIntValue("teamBenefit");
+					//int resourcesRequested = helpReqMsgs.get(i).getIntValue("requiredResources");
+//					int teamLoss = -1;
+//					int netTeamBenefit = -1;
+					
+//					if (canCalc())
+//					{
+//						teamLoss = calcTeamLoss(myMaxAssistance);
+//						netTeamBenefit = teamBenefit - teamLoss;
+//					}
+
+//					logInf("For agent " + requesterAgent + ", team loss= " + teamLoss + ", NTB= " + netTeamBenefit);
+
+//					if (netTeamBenefit >= myNetTeamBenefit) {
+//						logInf("Prepared to bid to help agent " + requesterAgent);
+//						if (resourcesRequested < resourcePoints)
+//							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested, wellbeing()));
+//						else
+//							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcePoints, wellbeing()));
+//						if (resourcesRequested > myMaxAssistance)
+//							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, myMaxAssistance, wellbeing()));
+//						else
+//							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested, wellbeing()));
+//						bidding = true;
+//					}
+
 			}
 			
 			setState(ResMAPState.S_RESPOND_TO_REQ);
@@ -858,11 +896,10 @@ public class ResourceMAPAgent extends Agent {
 	/**
 	 * Prepares a help request message and returns its String encoding.
 	 * 
-	 * @param teamBenefit			The team benefit to be included in
-	 * 								the message.
+	 *
 	 * @return						The message encoded in String
 	 */
-	private String prepareHelpReqMsg(int stepsToGoal, int estimatedCostToGoal, int averageCellCost) {
+	private String prepareHelpReqMsg(int stepsToGoal, double estimatedCostToGoal, double averageCellCost, int nextStepCost) {
 		
 		Message helpReq = new Message(id(),-1,MAP_HELP_REQ_MSG);
 		//helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
@@ -870,8 +907,9 @@ public class ResourceMAPAgent extends Agent {
 		
 		helpReq.putTuple("eCostToGoal", estimatedCostToGoal);
 		helpReq.putTuple("stepsToGoal", stepsToGoal);
-		helpReq.putTuple("averageCellCost", averageCellCost);
-		
+		helpReq.putTuple("averageStepCost", averageCellCost);
+		helpReq.putTuple("nextStepCost", nextStepCost);
+
 		Double w = wellbeing();
 		helpReq.putTuple("wellbeing", Double.toString(w));
 		lastSentWellbeing = w;
@@ -903,7 +941,7 @@ public class ResourceMAPAgent extends Agent {
 	 * @param NTB					The net team benefit
 	 * @return						The message encoded in String
 	 */
-	private Message prepareBidMsg(int requester, int NTB, int resourceAmount, double helperWellBeing) {
+	private Message prepareBidMsg(int NTB , int requester, int resourceAmount, double helperWellBeing) {
 		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
 		bidMsg.putTuple("NTB", NTB);
 		bidMsg.putTuple("resourceAmount", resourceAmount);

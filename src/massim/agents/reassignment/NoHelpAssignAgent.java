@@ -84,8 +84,7 @@ public class NoHelpAssignAgent extends Agent {
 			RowCol[] currentPos,
 			int[] actionCosts,int initResourcePoints) {
 		
-		super.initializeRun(tt,subtaskAssignments,
-				currentPos,actionCosts,initResourcePoints);			
+		super.initializeRun(tt,subtaskAssignments, currentPos,actionCosts,initResourcePoints, actionCostsRange());
 		
 		logInf("Initialized for a new run.");
 		logInf("My initial resource points = "+resourcePoints());		
@@ -957,7 +956,7 @@ public class NoHelpAssignAgent extends Agent {
 	 * 
 	 * @param msg					The desired message to be printed
 	 */
-	private void logInf(String msg) {
+	protected void logInf(String msg) {
 		if (dbgInf) {
 			System.out.println("[NoHelpAssignAgent " + id() + "]: " + msg);
 		

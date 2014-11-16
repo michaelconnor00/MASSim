@@ -8,8 +8,6 @@ public class Message {
 	private int type;
 	private HashMap<String,String> fields;
 	
-	//
-	
 	private String mainDelim = ",";
 	private String fieldDelim = ":";
 	
