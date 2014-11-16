@@ -372,7 +372,7 @@ public class ResourceMAPAgent extends Agent {
 				logInf("Received "+helpReqMsgs.size()+" help requests");
 				
 				int maxNetTeamBenefit = Integer.MIN_VALUE;				
-				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
+				int myMaxAssistance = resourcePoints - (int)estimatedCost(path); //Allow canCalc cost time the size of the team less one.
 				int myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
 				int resourcesRequested = 0;
 				
@@ -406,6 +406,7 @@ public class ResourceMAPAgent extends Agent {
 				if (agentToHelp != -1)
 				{					
 					logInf("Prepared to bid to help agent "+ agentToHelp);
+
 					if (maxNetTeamBenefit >= myNetTeamBenefit ){
 						if (resourcesRequested < resourcePoints)
 							bidMsg = prepareBidMsg(agentToHelp, maxNetTeamBenefit, resourcesRequested);	
