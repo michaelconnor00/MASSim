@@ -30,18 +30,13 @@ public class ResourceMAPAgent extends Agent {
 	
 	// Agent states
 	private enum ResMAPState {
-		
 		S_INIT, 
 		S_SEEK_HELP, S_RESPOND_TO_REQ, 
 		S_DECIDE_OWN_ACT, S_BLOCKED, S_RESPOND_BIDS, S_BIDDING,
-		S_DECIDE_HELP_ACT, 
 		R_IGNORE_HELP_REQ, R_GET_HELP_REQ,
 		R_GET_BIDS, R_BIDDING, R_DO_OWN_ACT,
-		R_BLOCKED, R_ACCEPT_HELP_ACT,R_GET_BID_CONF,
-		R_DO_HELP_ACT,
-		
-		// Resource MAP specific states
-		S_PROVIDE_RES, R_ACCEPT_RES
+		R_BLOCKED,
+		R_GET_BID_CONF
 	}
 	
 	// Request and cost thresholds
@@ -127,8 +122,8 @@ public class ResourceMAPAgent extends Agent {
 	public void initializeRun(TeamTask tt, int[] subtaskAssignments , RowCol[] currentPos,
 							  int[] actionCosts,int initResourcePoints, int[] actionCostsRange){
 		
-		super.initializeRun(tt,subtaskAssignments,
-				currentPos,actionCosts,initResourcePoints, actionCostsRange);		
+		super.initializeRun(tt, subtaskAssignments,
+				currentPos, actionCosts, initResourcePoints, actionCostsRange);
 		
 		logInf("Initialized for a new run.");
 		logInf("My initial resource points = " + resourcePoints());		
@@ -293,10 +288,6 @@ public class ResourceMAPAgent extends Agent {
 			 setState(ResMAPState.R_DO_OWN_ACT);	
 			break;
 			
-		case S_DECIDE_HELP_ACT:
-			setState(ResMAPState.R_DO_HELP_ACT);
-			break;
-			
 		case S_RESPOND_BIDS:
 			// Will have to respond to multiple bids here...  How much can we give back to an agent (to R_GET_BIDS)
 			if (canSend())
@@ -312,7 +303,7 @@ public class ResourceMAPAgent extends Agent {
 				
 				// This send message will need to respond with unused resources (resources we can give back)
 				
-				setState(ResMAPState.R_ACCEPT_HELP_ACT); 
+				setState(ResMAPState.R_DO_OWN_ACT);
 			}
 			else
 				setState(ResMAPState.R_BLOCKED); 
@@ -371,9 +362,10 @@ public class ResourceMAPAgent extends Agent {
 			{
 				logInf("Received "+ helpReqMsgs.size()+ " help requests");
 				
-				bidMsgs = new ArrayList<>();
-				
+				bidMsgs = new ArrayList();
+
 				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
+
 				int myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
 	
 				
@@ -392,6 +384,7 @@ public class ResourceMAPAgent extends Agent {
 						teamLoss = calcTeamLoss(myMaxAssistance);
 						netTeamBenefit = teamBenefit - teamLoss;
 					}
+
 
 					logInf("For agent " + requesterAgent + ", team loss= " + teamLoss + ", NTB= " + netTeamBenefit);
 
@@ -495,6 +488,7 @@ public class ResourceMAPAgent extends Agent {
 			
 		case R_BLOCKED:
 			//TODO: ? skip the action
+			//TODO: What if distrubance? replan?
 			// or forfeit
 			setRoundAction(actionType.FORFEIT);
 			break;
@@ -542,18 +536,6 @@ public class ResourceMAPAgent extends Agent {
 				logInf("Nothing to do at this round.");
 				setRoundAction(actionType.SKIP);
 			}
-			break;
-			
-		case R_DO_HELP_ACT:
-			logInf("Will help another agent");
-			setRoundAction(actionType.HELP_ANOTHER);
-			break;
-			
-		case R_ACCEPT_HELP_ACT:
-			logInf("Will receive help");
-			
-			// actionType should probably be OWN? (with resource assistance)
-			setRoundAction(actionType.HAS_HELP);
 			break;
 			
 		default:			
@@ -892,7 +874,7 @@ public class ResourceMAPAgent extends Agent {
 	/**
 	 * Prepares a help request message and returns its String encoding.
 	 * 
-	 * @param teamBenefit			The team benefit to be included in
+	 * @param w			The team benefit to be included in
 	 * 								the message.
 	 * @return						The message encoded in String
 	 */
@@ -925,7 +907,7 @@ public class ResourceMAPAgent extends Agent {
 	 * Prepares  a list of help confirmed messages for a list of helpers 
 	 * encoding.
 	 * 
-	 * @param helper				The helper agent
+	 * @param helpers				The helper agent
 	 * @return						The message encoded in String
 	 */
 	private Message[] prepareConfirmMsgs(ArrayList<Integer> helpers) {
@@ -967,16 +949,14 @@ public class ResourceMAPAgent extends Agent {
 	 * 
 	 * @return						The team benefit.
 	 */
-	private int calcTeamBenefit() {
+	private int calcTeamBenefit(int helpResourcePoints) {
 		
 		decResourcePoints(Agent.calculationCost);
-		
-		//int withHelpRewards = projectRewardPoints(resourcePoints(), skipCell);  
-		// TO-DO:
-		int withHelpRewards = projectRewardPoints(0, path.getEndPoint());  // Not sure about resource point here..
-		
-		//int noHelpRewards = projectRewardPoints(resourcePoints(), pos());
-		int noHelpRewards = projectRewardPoints(resourcePoints(), pos());
+
+		//Calc PATH rewards with help
+		int withHelpRewards = projectRewardPoints(resourcePoints() + helpResourcePoints, path.getEndPoint());
+		//Calc PATH rewards with no help
+		int noHelpRewards = projectRewardPoints(resourcePoints(), path.getEndPoint());
 		
 		// Don't need to calculate these since resource assistance can provide enough resources for more than a single move
 		//int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),skipCell) - 1 ;	
@@ -985,6 +965,10 @@ public class ResourceMAPAgent extends Agent {
 			//(noHelpRemPathLength-withHelpRemPathLength));
 		
 		return (withHelpRewards - noHelpRewards);
+	}
+
+	private int calcTeamBenefit(){
+		return calcTeamBenefit(0);
 	}
 	
 	/**
@@ -1011,44 +995,6 @@ public class ResourceMAPAgent extends Agent {
 			logErr("Could not do my own move :(");
 			return false;
 		}
-	}
-	
-	/**
-	 * Agent can provide resources to another agent.
-	 * 
-	 * To be overridden by the agent if necessary.
-	 * 
-	 * @return the amount of assistance the agent can provide
-	 */
-	@Override
-	protected boolean doHelpAnother() {
-		// Should calculate the maximum amount of resources the agent is willing to give to another agent.
-		boolean result;		
-		//int cost = getCellCost(helpeeNextCell);			
-		int cost = getCellCost(helpeeFinalCell);
-		logInf("Should help agent "+agentToHelp);
-		
-		if (resourcePoints() >= cost )
-		{			
-			logInf("Helped agent " + agentToHelp);
-			decResourcePoints(cost);			
-			result = true;
-	
-			setLastAction("Helped:" + (agentToHelp + 1));
-		}
-		else
-		{
-			logErr(""+resourcePoints());
-			logErr(""+cost);
-			logErr("Failed to help :(");
-			//Denish, 2014/03/30
-			setLastAction("Failed Help:" + (agentToHelp + 1));
-			result = false;
-		}
-		helpeeFinalCell = null;
-		agentToHelp = -1;
-		
-		return result;
 	}
 	
 	/**
@@ -1092,8 +1038,6 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private boolean isInFinalState() {
 		switch (state) {
-			case R_ACCEPT_HELP_ACT:  //Might not need this?
-			case R_DO_HELP_ACT:
 			case R_DO_OWN_ACT:
 			case R_BLOCKED:
 				return true;				
