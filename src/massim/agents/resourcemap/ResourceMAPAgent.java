@@ -69,9 +69,8 @@ public class ResourceMAPAgent extends Agent {
 	
 	// Bidding.  Used for communicating bid details.
 	private boolean bidding;
-	private int agentToHelp;
 	private RowCol helpeeFinalCell;
-	private String bidMsg;
+	private ArrayList<String> bidMsgs;
 	private ArrayList<Integer> helperAgents;  // List of agents who assisted with resources in this round
 	private int resourceAssistanceAmount;
 	
@@ -365,23 +364,25 @@ public class ResourceMAPAgent extends Agent {
 			Collections.sort(helpReqMsgs, teamBenefitOrder);
 			
 			bidding = false;
-			agentToHelp = -1;  // A default value --> means no agent will be helped
 			
 			if (helpReqMsgs.size() > 0)
 			{
-				logInf("Received "+helpReqMsgs.size()+" help requests");
+				logInf("Received "+ helpReqMsgs.size()+ " help requests");
 				
-				int maxNetTeamBenefit = Integer.MIN_VALUE;				
-				int myMaxAssistance = resourcePoints - (int)estimatedCost(path); //Allow canCalc cost time the size of the team less one.
+				bidMsgs = new ArrayList<>();
+
+				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
+
 				int myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
-				int resourcesRequested = 0;
+	
 				
-				for (Message msg : helpReqMsgs)
+				// loop through agents in need of help.  Help msgs are sorted in descending order of teamBenefit				
+				for (int i = 0; (i < helpReqMsgs.size()) && (!helpReqMsgs.isEmpty() && myMaxAssistance <= 0); i++)
 				{
 					
-					int teamBenefit = msg.getIntValue("teamBenefit");
-					int requesterAgent = msg.sender();
-									
+					int teamBenefit = helpReqMsgs.get(i).getIntValue("teamBenefit");
+					int requesterAgent = helpReqMsgs.get(i).sender();
+					int resourcesRequested = helpReqMsgs.get(i).getIntValue("requiredResources");
 					int teamLoss = -1;
 					int netTeamBenefit = -1;
 					
@@ -389,43 +390,29 @@ public class ResourceMAPAgent extends Agent {
 					{
 						teamLoss = calcTeamLoss(myMaxAssistance);
 						netTeamBenefit = teamBenefit - teamLoss;
-					}					
-					
-					logInf("For agent "+ requesterAgent +", team loss= "+ teamLoss +", NTB= "+netTeamBenefit);
-					
-					if (netTeamBenefit > 0 && netTeamBenefit > maxNetTeamBenefit )
-					{
-						maxNetTeamBenefit = netTeamBenefit;
-						agentToHelp = requesterAgent;
-						resourcesRequested = msg.getIntValue("requiredResources");
 					}
-				}
-				
-				
-				
-				if (agentToHelp != -1)
-				{					
-					logInf("Prepared to bid to help agent "+ agentToHelp);
 
-					if (maxNetTeamBenefit >= myNetTeamBenefit ){
+
+					logInf("For agent " + requesterAgent + ", team loss= " + teamLoss + ", NTB= " + netTeamBenefit);
+
+					if (netTeamBenefit >= myNetTeamBenefit) {
+						logInf("Prepared to bid to help agent " + requesterAgent);
 						if (resourcesRequested < resourcePoints)
-							bidMsg = prepareBidMsg(agentToHelp, maxNetTeamBenefit, resourcesRequested);	
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested));
 						else
-							bidMsg = prepareBidMsg(agentToHelp, maxNetTeamBenefit, resourcePoints);
-					}
-					else{
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcePoints));
 						if (resourcesRequested > myMaxAssistance)
-							bidMsg = prepareBidMsg(agentToHelp, maxNetTeamBenefit, myMaxAssistance);	
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, myMaxAssistance));
 						else
-							bidMsg = prepareBidMsg(agentToHelp, maxNetTeamBenefit, resourcesRequested);
-					}
-					bidding = true;									
-				}									
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested));
+						bidding = true;
+					} 	
+				}
 			}
 			
 			setState(ResMAPState.S_RESPOND_TO_REQ);
 			break;
-			
+	
 		case R_IGNORE_HELP_REQ:
 			msgStr = commMedium().receive(id());
 			while (!msgStr.equals(""))
