@@ -953,7 +953,8 @@ public class ResourceMAPAgent extends Agent {
 		decResourcePoints(Agent.calculationCost);
 		
 		//int withHelpRewards = projectRewardPoints(resourcePoints(), skipCell);  
-		int withHelpRewards = projectRewardPoints(resourcePoints(), path.getEndPoint());  // Not sure about resource point here..
+		// TO-DO:
+		int withHelpRewards = projectRewardPoints(0, path.getEndPoint());  // Not sure about resource point here..
 		
 		//int noHelpRewards = projectRewardPoints(resourcePoints(), pos());
 		int noHelpRewards = projectRewardPoints(resourcePoints(), pos());
