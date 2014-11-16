@@ -239,6 +239,8 @@ public class ResourceMAPAgent extends Agent {
 						logInf("Team benefit of help would be " + teamBenefit);
 						// String helpReqMsg =
 						// prepareHelpReqMsg(teamBenefit,nextCell);
+						
+						// prepareHelpReqMsg requires: (int stepsToGoal, int estimatedCostToGoal, int averageCellCost)
 						String helpReqMsg = prepareHelpReqMsg(teamBenefit, (int) estimatedCost(path));
 						broadcastMsg(helpReqMsg);
 						this.numOfHelpReq++;
@@ -365,8 +367,10 @@ public class ResourceMAPAgent extends Agent {
 				bidMsgs = new ArrayList();
 
 				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
-
-				int myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
+				int myNetTeamBenefit = 0;
+				
+				if (canCalc())
+					myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
 	
 				
 				// loop through agents in need of help.  Help msgs are sorted in descending order of teamBenefit				
@@ -391,13 +395,13 @@ public class ResourceMAPAgent extends Agent {
 					if (netTeamBenefit >= myNetTeamBenefit) {
 						logInf("Prepared to bid to help agent " + requesterAgent);
 						if (resourcesRequested < resourcePoints)
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested));
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested, wellbeing()));
 						else
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcePoints));
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcePoints, wellbeing()));
 						if (resourcesRequested > myMaxAssistance)
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, myMaxAssistance));
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, myMaxAssistance, wellbeing()));
 						else
-							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested));
+							bidMsgs.add(prepareBidMsg(requesterAgent, netTeamBenefit, resourcesRequested, wellbeing()));
 						bidding = true;
 					} 	
 				}
@@ -858,11 +862,15 @@ public class ResourceMAPAgent extends Agent {
 	 * 								the message.
 	 * @return						The message encoded in String
 	 */
-	private String prepareHelpReqMsg(int teamBenefit, int requiredResources) {
+	private String prepareHelpReqMsg(int stepsToGoal, int estimatedCostToGoal, int averageCellCost) {
 		
 		Message helpReq = new Message(id(),-1,MAP_HELP_REQ_MSG);
-		helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
-		helpReq.putTuple("requiredResources", requiredResources);
+		//helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
+		//helpReq.putTuple("requiredResources", requiredResources);
+		
+		helpReq.putTuple("eCostToGoal", estimatedCostToGoal);
+		helpReq.putTuple("stepsToGoal", stepsToGoal);
+		helpReq.putTuple("averageCellCost", averageCellCost);
 		
 		Double w = wellbeing();
 		helpReq.putTuple("wellbeing", Double.toString(w));
@@ -895,11 +903,14 @@ public class ResourceMAPAgent extends Agent {
 	 * @param NTB					The net team benefit
 	 * @return						The message encoded in String
 	 */
-	private Message prepareBidMsg(int requester, int NTB, int resourceAmount) {
+	private Message prepareBidMsg(int requester, int NTB, int resourceAmount, double helperWellBeing) {
 		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
 		bidMsg.putTuple("NTB", NTB);
 		bidMsg.putTuple("resourceAmount", resourceAmount);
 		bidMsg.putTuple("requester", requester);
+		
+		bidMsg.putTuple("wellBeing", helperWellBeing );
+		
 		return bidMsg;
 	}
 	
@@ -958,7 +969,6 @@ public class ResourceMAPAgent extends Agent {
 		//Calc PATH rewards with no help
 		int noHelpRewards = projectRewardPoints(resourcePoints(), path.getEndPoint());
 		
-		// Don't need to calculate these since resource assistance can provide enough resources for more than a single move
 		//int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),skipCell) - 1 ;	
 		//int noHelpRemPathLength = path().getNumPoints() -  findFinalPos(resourcePoints(),pos()) - 1;		
 		//return (withHelpRewards-noHelpRewards) * (1+ (importance(withHelpRemPathLength)-importance(noHelpRemPathLength)) *
