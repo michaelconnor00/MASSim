@@ -70,9 +70,8 @@ public class ResourceMAPAgent extends Agent {
 	// Bidding.  Used for communicating bid details.
 	private boolean bidding;
 	private RowCol helpeeFinalCell;
-	private ArrayList<String> bidMsgs;
+	private ArrayList<Message> bidMsgs;
 	private ArrayList<Integer> helperAgents;  // List of agents who assisted with resources in this round
-	private int resourceAssistanceAmount;
 	
 	
 	// Team well-being counters
@@ -263,9 +262,12 @@ public class ResourceMAPAgent extends Agent {
 		case S_RESPOND_TO_REQ:
 			if(bidding && canSend())
 			{
-				logInf("Sending a bid to agent" + agentToHelp);
-				sendMsg(agentToHelp, bidMsg);
-				this.numOfBids++;
+				for (Message msg : bidMsgs){
+					logInf("Sending a bid to agent" + msg.getIntValue("requester")); // Requester was previously agentToHelp..
+					sendMsg(msg.getIntValue("requester"), msg.toString());
+					this.numOfBids++;
+				}
+				
 				setState(ResMAPState.R_BIDDING);
 			}
 			
@@ -473,7 +475,7 @@ public class ResourceMAPAgent extends Agent {
 				for (Message bid : bidMsgs)
 				{
 					int bidNTB = bid.getIntValue("NTB");
-					int offererAgent = bid.sender();
+					//int offererAgent = bid.sender();
 					
 					 // Compare the net team benefit of the bid to the current max bid
 					if (bidNTB > maxBid) 
@@ -596,6 +598,36 @@ public class ResourceMAPAgent extends Agent {
 				return AgGameStatCode.BLOCKED;			
 			}
 		}					
+	}
+	
+	protected boolean act() {
+		
+		boolean result = false;
+		
+		switch (super.getRoundAction()) {
+		case OWN:
+			setLastAction("Self");
+			result = doOwnAction();
+			break;/*
+		case HAS_HELP:
+			//result = doGetHelpAction();
+			break;
+		case HELP_ANOTHER:
+			//result = doHelpAnother();
+			break;*/
+		case SKIP:
+			setLastAction("Skipped");
+			result = true;
+			break;
+		case FORFEIT:		
+			setLastAction("Forfeit");
+			result = false;
+			break;
+		default:
+			break;
+		}
+		
+		return result;
 	}
 
 	/**
@@ -881,11 +913,12 @@ public class ResourceMAPAgent extends Agent {
 	 * @param NTB					The net team benefit
 	 * @return						The message encoded in String
 	 */
-	private String prepareBidMsg(int requester, int NTB, int resourceAmount) {
+	private Message prepareBidMsg(int requester, int NTB, int resourceAmount) {
 		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
 		bidMsg.putTuple("NTB", NTB);
 		bidMsg.putTuple("resourceAmount", resourceAmount);
-		return bidMsg.toString();
+		bidMsg.putTuple("requester", requester);
+		return bidMsg;
 	}
 	
 	/**
@@ -1015,8 +1048,6 @@ public class ResourceMAPAgent extends Agent {
 		helpeeFinalCell = null;
 		agentToHelp = -1;
 		
-		// The amount of resources that can be given to another agent.
-		resourceAssistanceAmount = 0;
 		return result;
 	}
 	
