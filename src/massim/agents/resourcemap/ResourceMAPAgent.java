@@ -121,21 +121,21 @@ public class ResourceMAPAgent extends Agent {
 		estimatedCostToGoalOrder = new Comparator<Message>() {
 			@Override
 			public int compare(Message m1, Message m2) { //ASC
-				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+				return Double.compare(m1.getDoubleValue("eCostToGoal"), m2.getDoubleValue("eCostToGoal"));
 			}
 		};
 
 		averageStepCostOrder = new Comparator<Message>() {
 			@Override
 			public int compare(Message m1, Message m2) { //ASC
-				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+				return Double.compare(m1.getDoubleValue("averageStepCost"), m2.getDoubleValue("averageStepCost"));
 			}
 		};
 
 		wellbeingOrder = new Comparator<Message>() {
 			@Override
 			public int compare(Message m1, Message m2) { //DESC
-				return Integer.compare(m2.getIntValue("wellbeing"), m1.getIntValue("wellbeing"));
+				return Double.compare(m2.getDoubleValue("wellbeing"), m1.getDoubleValue("wellbeing"));
 			}
 		};
 
@@ -239,13 +239,16 @@ public class ResourceMAPAgent extends Agent {
 			}
 
 
-			if(replanning && canReplan()) {
-				replan();
-				replanned = true;
+			if (replanning){
+				if(canReplan()) {
+					replan();
+					replanned = true;
+				}
+				else {
+					logErr("Could not replan " + resourcePoints());
+				}
 			}
-			else {
-				logErr("Could not replan " + resourcePoints());
-			}
+
 
 
 			if (reachedGoal())
@@ -1290,7 +1293,7 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private void logInf2(String msg) {
 		if (dbgInf2)
-			System.err.println("[AdvActionMAP2 Agent " + id() + "]: " + msg);
+			System.err.println("[ResourceMAP Agent " + id() + "]: " + msg);
 	}
 	
 	/**
@@ -1301,7 +1304,7 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private void logErr(String msg) {
 		if (dbgErr)
-			System.out.println("[xxxxxxxxxxx][AdvActionMAP2 Agent " + id() + 
+			System.out.println("[xxxxxxxxxxx][ResourceMAP Agent " + id() +
 							   "]: " + msg);
 	}
 }
