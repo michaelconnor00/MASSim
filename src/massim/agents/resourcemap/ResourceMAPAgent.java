@@ -217,20 +217,20 @@ public class ResourceMAPAgent extends Agent {
 		
 		case S_INIT:
 			
-			double wellbeing = wellbeing();
-			double twb = teamWellbeing();
-			double twbSD = teamWellbeingStdDev();
+//			double wellbeing = wellbeing();
+//			double twb = teamWellbeing();
+//			double twbSD = teamWellbeingStdDev();
 			
-			logInf2("My wellbeing = " + wellbeing);
-			logInf2("Team wellbeing = "+twb);
-			logInf2("Team wellbeing std dev = " + twbSD);
-			
-			if (twb < 0.8 && twbSD < 0.5)
-				WLL -= 0.3;
-			if (twb > 0.8 && twbSD > 0.5)
-				WLL += 0.1;
-			if (twb > 0.8 && twbSD < 0.5)
-				WLL += 0.3;
+//			logInf2("My wellbeing = " + wellbeing);
+//			logInf2("Team wellbeing = "+twb);
+//			logInf2("Team wellbeing std dev = " + twbSD);
+//
+//			if (twb < 0.8 && twbSD < 0.5)
+//				WLL -= 0.3;
+//			if (twb > 0.8 && twbSD > 0.5)
+//				WLL += 0.1;
+//			if (twb > 0.8 && twbSD < 0.5)
+//				WLL += 0.3;
 				
 			if (dbgInf2)
 			{
@@ -255,7 +255,7 @@ public class ResourceMAPAgent extends Agent {
 			{
 					if (canBCast()) {
 					logInf2("Broadcasting my wellbeing to the team");
-					broadcastMsg(prepareWellbeingUpMsg(wellbeing));
+					broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
 					}
 				setState(ResMAPState.R_GET_HELP_REQ);
 			}
@@ -264,7 +264,7 @@ public class ResourceMAPAgent extends Agent {
 				RowCol nextCell = path().getNextPoint(pos());			
 				int cost = getCellCost(nextCell);
 				
-				boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);  // Devin : request threshold required?
+				boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);
 				
 				// Condition counters
 				//if (cost > resourcePoints()) cond1count++;
@@ -280,7 +280,8 @@ public class ResourceMAPAgent extends Agent {
 
 						// Create the help request message
 						double eCost = estimatedCost(remainingPath(pos()));
-						double avgCellCostToGoal = estimatedCost(path)/remainingPath(pos()).getNumPoints();
+						int remPath = remainingPath(pos()).getNumPoints();
+						double avgCellCostToGoal = eCost/remPath;
 						int nextCellCost = getCellCost(path().getNextPoint(pos()));
 
 						String helpReqMsg = prepareHelpReqMsg(remainingPath(pos()).getNumPoints(),
@@ -411,7 +412,7 @@ public class ResourceMAPAgent extends Agent {
 
 					if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
 							(resourcePoints - Team.unicastCost) >= reqECostToGoal) {
-						bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal, wellbeing()));
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), wellbeing()));
 						helpReqMsgs.remove(helpReqMsgs.get(i));
 						bidding = true;
 						break;
@@ -927,10 +928,9 @@ public class ResourceMAPAgent extends Agent {
 		helpReq.putTuple("averageStepCost", averageCellCost);
 		helpReq.putTuple("nextStepCost", nextStepCost);
 
-		Double w = wellbeing();
-		helpReq.putTuple("wellbeing", w);
-		lastSentWellbeing = w;
-		
+		helpReq.putTuple("wellbeing", wellbeing());
+//		lastSentWellbeing = wellbeing();
+
 		return helpReq.toString();
 	}
 	
@@ -957,11 +957,11 @@ public class ResourceMAPAgent extends Agent {
 	 * @param requester				The help requester agent
 	 * @return						The message encoded in String
 	 */
-	private Message prepareBidMsg(int requester, double resourceAmount, double helperWellBeing) {
+	private Message prepareBidMsg(int requester, int resourceAmount, double helperWellBeing) {
 		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
 		bidMsg.putTuple("resourceAmount", resourceAmount);
 		bidMsg.putTuple("requester", requester);
-		bidMsg.putTuple("wellBeing", helperWellBeing );
+		bidMsg.putTuple("wellbeing", helperWellBeing );
 		
 		return bidMsg;
 	}
