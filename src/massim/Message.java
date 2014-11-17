@@ -8,8 +8,6 @@ public class Message {
 	private int type;
 	private HashMap<String,String> fields;
 	
-	//
-	
 	private String mainDelim = ",";
 	private String fieldDelim = ":";
 	
@@ -38,6 +36,12 @@ public class Message {
 	public void putTuple(String field, int value) {
 		fields.put(field,Integer.toString(value));
 	}
+	
+	// Added by Devin C.
+	public void putTuple(String field, double value) {
+		fields.put(field,Double.toString(value));
+	}
+	
 	
 	public String getValue(String field) {
 		//if (fields.containsKey(field))  /* commented for the moment */

@@ -320,7 +320,7 @@ public abstract class Agent {
 		return tt.goalPos[mySubtask];
 	}
 	
-	//Denish, added due to mysubtask change
+	//Denish, added due to my subtask change
 	/**
 	 * Enables the agent to access its goal position.
 	 * 
