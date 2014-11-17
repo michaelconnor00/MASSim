@@ -39,7 +39,7 @@ public class ResourceMAPAgent extends Agent {
 	// Resource MAP toggles
 	public static boolean canSacrifice;
 	public static boolean multipleBids;
-
+	public static double costToGoalHelpThreshold = 1.1;
 
 	// Agent states
 	private enum ResMAPState {
@@ -376,41 +376,54 @@ public class ResourceMAPAgent extends Agent {
 				 msgStr = commMedium().receive(id());
 			}
 
-			// Sort help request messages from cheapest cost to goal to most expensive
-			Collections.sort(helpReqMsgs, estimatedCostToGoalOrder);
+
 			
-			bidding = false;
+
 			
 			if (helpReqMsgs.size() > 0)
 			{
-				logInf("Received "+ helpReqMsgs.size()+ " help requests");
-				
+				bidding = false;
 				bidMsgs = new ArrayList();
 
-				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
+				logInf("Received "+ helpReqMsgs.size()+ " help requests");
 
-//				int myNetTeamBenefit = 0;
-//
-//				if (canCalc())
-//					myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
-//
-				
-				// loop through agents in need of help. Messages are sorted in ascending order of eCostToGoal
-				//for (int i = 0; (i < helpReqMsgs.size()) && (!helpReqMsgs.isEmpty() && myMaxAssistance <= 0); i++)
-				//{
+				// Sort help request messages from cheapest cost to goal to most expensive
+				Collections.sort(helpReqMsgs, estimatedCostToGoalOrder);
 
-				// Agents are sorted by cheapest estimated cost to goal.
+				// Bidding for helping achieve goal
 				for (int i = 0; (i < helpReqMsgs.size()) && canSacrifice && !bidding; i++)
 				{
-
 					Double reqECostToGoal = helpReqMsgs.get(i).getDoubleValue("eCostToGoal");
-					int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
-					Double reqRemainingStepAvgCost = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
-					int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost");
 					int requesterAgent = helpReqMsgs.get(i).sender();
 
-					// NEW APPROACH:
+					if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
+							(resourcePoints + calculationCost + Team.unicastCost) >= reqECostToGoal) {
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal, wellbeing()));
+						helpReqMsgs.remove(helpReqMsgs.get(i));
+						bidding = true;
+						break;
+					}
+				}
 
+				int myMaxAssistance = resourcePoints - (int)estimatedCost(remainingPath(pos()));
+
+				// Bidding for helping achieve next cell
+				for (int i = 0; (i < helpReqMsgs.size()) && !bidding ; i++)
+				{
+					int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
+					double reqAvgStepCostToGoal = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
+					int reqNextStepCost =  helpReqMsgs.get(i).getIntValue("nextStepCost");
+					int requesterAgent = helpReqMsgs.get(i).sender();
+
+					// Helper has enough resources to reach their own goal
+					if ((estimatedCost(remainingPath(pos())) <= resourcePoints ) &&
+							myMaxAssistance > reqNextStepCost){
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+					}
+					// Helper does not have enough resource points to get to their goal
+					else if(getAverage(actionCosts()) > reqAvgStepCostToGoal){
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+					}
 
 				}
 
@@ -938,15 +951,12 @@ public class ResourceMAPAgent extends Agent {
 	 * Prepares a bid message and returns its String encoding.
 	 * 
 	 * @param requester				The help requester agent
-	 * @param NTB					The net team benefit
 	 * @return						The message encoded in String
 	 */
-	private Message prepareBidMsg(int NTB , int requester, int resourceAmount, double helperWellBeing) {
+	private Message prepareBidMsg(int requester, double resourceAmount, double helperWellBeing) {
 		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
-		bidMsg.putTuple("NTB", NTB);
 		bidMsg.putTuple("resourceAmount", resourceAmount);
 		bidMsg.putTuple("requester", requester);
-		
 		bidMsg.putTuple("wellBeing", helperWellBeing );
 		
 		return bidMsg;
