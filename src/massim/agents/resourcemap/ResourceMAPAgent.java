@@ -28,9 +28,9 @@ public class ResourceMAPAgent extends Agent {
 	public static boolean replanning = false;
 
 	// Request and cost thresholds
-	public static double requestThreshold;  // Devin says: Check these... I don't think we need them.
-	public static double lowCostThreshold;
-	public static double EPSILON;
+	//public static double requestThreshold;
+	//public static double lowCostThreshold;
+	//public static double EPSILON;
 
 	// Resource MAP toggles
 	public static boolean canSacrifice;
@@ -239,8 +239,10 @@ public class ResourceMAPAgent extends Agent {
 			}
 
 
-			if(replanning && canReplan())
+			if(replanning && canReplan()) {
 				replan();
+				replanned = true;
+			}
 			else {
 				logErr("Could not replan " + resourcePoints());
 			}
@@ -248,7 +250,6 @@ public class ResourceMAPAgent extends Agent {
 
 			if (reachedGoal())
 			{
-				if (Math.abs((wellbeing - lastSentWellbeing)/lastSentWellbeing) < EPSILON)
 					if (canBCast()) {
 					logInf2("Broadcasting my wellbeing to the team");
 					broadcastMsg(prepareWellbeingUpMsg(wellbeing));
@@ -260,19 +261,19 @@ public class ResourceMAPAgent extends Agent {
 				RowCol nextCell = path().getNextPoint(pos());			
 				int cost = getCellCost(nextCell);
 				
-				boolean needHelp = (cost > resourcePoints()) || (cost > requestThreshold);  // Devin : request threshold required?
+				boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);  // Devin : request threshold required?
 				
 				// Condition counters
-				if (cost > resourcePoints()) cond1count++;
-				if ((wellbeing < WLL && cost > lowCostThreshold)) cond2count++;
-				if (cost > requestThreshold) cond3count++;
-				if (wellbeing < WLL) cond21count++;
+				//if (cost > resourcePoints()) cond1count++;
+				//if ((wellbeing < WLL && cost > lowCostThreshold)) cond2count++;
+				//if (cost > requestThreshold) cond3count++;
+				//if (wellbeing < WLL) cond21count++;
 				
 				if (needHelp)
 				{							
 					logInf2("Need help!");
 
-					if (canCalc() && canBCast()) {
+					if (canBCast()) {
 
 						// Create the help request message
 						double eCost = estimatedCost(remainingPath(pos()));
@@ -406,7 +407,7 @@ public class ResourceMAPAgent extends Agent {
 					int requesterAgent = helpReqMsgs.get(i).sender();
 
 					if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
-							(resourcePoints + calculationCost + Team.unicastCost) >= reqECostToGoal) {
+							(resourcePoints - Team.unicastCost) >= reqECostToGoal) {
 						bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal, wellbeing()));
 						helpReqMsgs.remove(helpReqMsgs.get(i));
 						bidding = true;
@@ -974,58 +975,59 @@ public class ResourceMAPAgent extends Agent {
 		confirmMessage.putTuple("returnedResources", returnedResources);
 		return confirmMessage;
 	}
-	
-	/**
-	 * Calculates the team loss considering spending the given amount 
-	 * of resource points to help. 
-	 * 
-	 * @param resourcesToSend				The amount of resources to send
-	 * @return							The team loss
-	 */
-	private int calcTeamLoss(int resourcesToSend)
-	{
-		decResourcePoints(Agent.calculationCost);
-		
-		int withHelpRewards = projectRewardPoints(resourcePoints()- resourcesToSend, pos());
-						
-		int noHelpRewards = projectRewardPoints(resourcePoints(),pos());
-						
-		int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints()- resourcesToSend, pos()) - 1;
-					
-		int noHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(), pos()) - 1;
-				
-		return  
-			(noHelpRewards - withHelpRewards) *
-			(1 + (importance(noHelpRemPathLength)-importance(withHelpRemPathLength)) *
-			(withHelpRemPathLength-noHelpRemPathLength)) + TeamTask.helpOverhead;
-							
-	}
-	
-	/**
-	 * Calculates the team benefit for using the available resources to move towards the goal.
-	 * 
-	 * @return						The team benefit.
-	 */
-	private int calcTeamBenefit(int helpResourcePoints) {
-		
-		decResourcePoints(Agent.calculationCost);
 
-		//Calc PATH rewards with help
-		int withHelpRewards = projectRewardPoints(resourcePoints() + helpResourcePoints, path.getEndPoint());
-		//Calc PATH rewards with no help
-		int noHelpRewards = projectRewardPoints(resourcePoints(), path.getEndPoint());
-		
-		//int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),skipCell) - 1 ;	
-		//int noHelpRemPathLength = path().getNumPoints() -  findFinalPos(resourcePoints(),pos()) - 1;		
-		//return (withHelpRewards-noHelpRewards) * (1+ (importance(withHelpRemPathLength)-importance(noHelpRemPathLength)) *
-			//(noHelpRemPathLength-withHelpRemPathLength));
-		
-		return (withHelpRewards - noHelpRewards);
-	}
 
-	private int calcTeamBenefit(){
-		return calcTeamBenefit(0);
-	}
+//	/**
+//	 * Calculates the team loss considering spending the given amount
+//	 * of resource points to help.
+//	 *
+//	 * @param resourcesToSend				The amount of resources to send
+//	 * @return							The team loss
+//	 */
+//	private int calcTeamLoss(int resourcesToSend)
+//	{
+//		decResourcePoints(Agent.calculationCost);
+//
+//		int withHelpRewards = projectRewardPoints(resourcePoints()- resourcesToSend, pos());
+//
+//		int noHelpRewards = projectRewardPoints(resourcePoints(),pos());
+//
+//		int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints()- resourcesToSend, pos()) - 1;
+//
+//		int noHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(), pos()) - 1;
+//
+//		return
+//			(noHelpRewards - withHelpRewards) *
+//			(1 + (importance(noHelpRemPathLength)-importance(withHelpRemPathLength)) *
+//			(withHelpRemPathLength-noHelpRemPathLength)) + TeamTask.helpOverhead;
+//
+//	}
+//
+//	/**
+//	 * Calculates the team benefit for using the available resources to move towards the goal.
+//	 *
+//	 * @return						The team benefit.
+//	 */
+//	private int calcTeamBenefit(int helpResourcePoints) {
+//
+//		decResourcePoints(Agent.calculationCost);
+//
+//		//Calc PATH rewards with help
+//		int withHelpRewards = projectRewardPoints(resourcePoints() + helpResourcePoints, path.getEndPoint());
+//		//Calc PATH rewards with no help
+//		int noHelpRewards = projectRewardPoints(resourcePoints(), path.getEndPoint());
+//
+//		//int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),skipCell) - 1 ;
+//		//int noHelpRemPathLength = path().getNumPoints() -  findFinalPos(resourcePoints(),pos()) - 1;
+//		//return (withHelpRewards-noHelpRewards) * (1+ (importance(withHelpRemPathLength)-importance(noHelpRemPathLength)) *
+//			//(noHelpRemPathLength-withHelpRemPathLength));
+//
+//		return (withHelpRewards - noHelpRewards);
+//	}
+//
+//	private int calcTeamBenefit(){
+//		return calcTeamBenefit(0);
+//	}
 	
 	/**
 	 * Enables the agent to perform its own action. 
@@ -1202,15 +1204,15 @@ public class ResourceMAPAgent extends Agent {
 		return (resourcePoints() >= Team.broadcastCost);	
 	}
 	
-	/**
-	 * Indicates whether the agent has enough resources to do calculations.
-	 * 
-	 * @return					true if there are enough resources /
-	 * 							false if there aren't enough resources
-	 */
-	private boolean canCalc() {
-		return (resourcePoints() >= Agent.calculationCost);
-	}
+//	/**
+//	 * Indicates whether the agent has enough resources to do calculations.
+//	 *
+//	 * @return					true if there are enough resources /
+//	 * 							false if there aren't enough resources
+//	 */
+//	private boolean canCalc() {
+//		return (resourcePoints() >= Agent.calculationCost);
+//	}
 
 	/**
 	 * Checks whether the agent has enough resources in order to replan
