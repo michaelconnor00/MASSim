@@ -353,7 +353,7 @@ public class ResourceMAPAgent extends Agent {
 				 msgStr = commMedium().receive(id());
 			}
 			
-			Collections.sort(helpReqMsgs, teamBenefitOrder);
+			Collections.sort(helpReqMsgs, teamBenefitOrder); //TODO Sort based on average step cost
 			
 			bidding = false;
 			
@@ -363,7 +363,7 @@ public class ResourceMAPAgent extends Agent {
 				
 				bidMsgs = new ArrayList();
 
-				int myMaxAssistance = resourcePoints - (int)estimatedCost(path);
+				int myMaxAssistance = resourcePoints() - (int)estimatedCost(path);
 
 				int myNetTeamBenefit = calcTeamBenefit() - calcTeamLoss(myMaxAssistance);
 	
