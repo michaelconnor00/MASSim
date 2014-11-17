@@ -8,7 +8,7 @@ import massim.*;
 
 
 /**
- * Resource MAP Agent.
+ * Resource MAP Agent
  * 
  * @author Devin Calado, Michael Conner
  * @version 1.0 - November 2014
@@ -22,19 +22,19 @@ public class ResourceMAPAgent extends Agent {
 	boolean dbgInf2 = false;
 
 
-	// Parameters:
+	// Adjustable Parameters:
 
 	// Re-Planning
 	public static boolean replanning = false;
 
 	// Request and cost thresholds
-	public static double requestThreshold;
+	public static double requestThreshold;  // Devin says: Check these... I don't think we need them.
 	public static double lowCostThreshold;
 	public static double EPSILON;
 
 	// Resource MAP toggles
 	public static boolean canSacrifice;
-	//public static boolean multipleBids;
+	//public static boolean multipleBids;  // Maybe implement this in the future
 	public static double costToGoalHelpThreshold = 1.1;
 
 
@@ -90,6 +90,7 @@ public class ResourceMAPAgent extends Agent {
 	private static Comparator<Message> teamBenefitOrder;
 	private static Comparator<Message> estimatedCostToGoalOrder;
 	private static Comparator<Message> averageStepCostOrder;
+
 	/**
 	 * The Constructor
 	 *
@@ -154,7 +155,6 @@ public class ResourceMAPAgent extends Agent {
 		logInf("My goal position: " + goalPos().toString());	
 		
 		oldBoard = null;
-		
 		agentsWellbeing = new double[Team.teamSize];
 		lastSentWellbeing = -1;
 	}
@@ -246,13 +246,12 @@ public class ResourceMAPAgent extends Agent {
 					}
 				setState(ResMAPState.R_GET_HELP_REQ);
 			}
-			
 			else 
 			{
 				RowCol nextCell = path().getNextPoint(pos());			
 				int cost = getCellCost(nextCell);
 				
-				boolean needHelp = (cost > resourcePoints()) || (cost > requestThreshold);
+				boolean needHelp = (cost > resourcePoints()) || (cost > requestThreshold);  // Devin : request threshold required?
 				
 				// Condition counters
 				if (cost > resourcePoints()) cond1count++;
@@ -265,13 +264,17 @@ public class ResourceMAPAgent extends Agent {
 					logInf2("Need help!");
 
 					if (canCalc() && canBCast()) {
-						int teamBenefit = calcTeamBenefit(); 
-						logInf("Broadcasting help");
-						logInf("Team benefit of help would be " + teamBenefit);
+
+						// Create the help request message
+						double eCost = estimatedCost(remainingPath(pos()));
+						double avgCellCostToGoal = estimatedCost(path)/remainingPath(pos()).getNumPoints();
+						int nextCellCost = getCellCost(path().getNextPoint(pos()));
+
 						String helpReqMsg = prepareHelpReqMsg(remainingPath(pos()).getNumPoints(),
-											estimatedCost(path),
-											estimatedCost(path)/remainingPath(pos()).getNumPoints(),
-											getCellCost(path().getNextPoint(pos())));
+											eCost,
+											avgCellCostToGoal,
+											nextCellCost);
+
 						broadcastMsg(helpReqMsg);
 						this.numOfHelpReq++;
 						setState(ResMAPState.R_IGNORE_HELP_REQ);
@@ -386,10 +389,6 @@ public class ResourceMAPAgent extends Agent {
 				 msgStr = commMedium().receive(id());
 			}
 
-
-			
-
-			
 			if (helpReqMsgs.size() > 0) {
 				bidding = false;
 				bidMsgs = new ArrayList();
@@ -555,7 +554,7 @@ public class ResourceMAPAgent extends Agent {
 				setState(ResMAPState.S_DECIDE_OWN_ACT);
 			else{
 				setState(ResMAPState.S_BLOCKED);
-				logInf("I just gave my resources, and now I can't make a single move");
+				logInf("I just gave my resources, and now I can't make a move");
 			}
 			break;
 			
@@ -898,7 +897,7 @@ public class ResourceMAPAgent extends Agent {
 		Message helpReq = new Message(id(),-1,MAP_HELP_REQ_MSG);
 		//helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
 		//helpReq.putTuple("requiredResources", requiredResources);
-		
+
 		helpReq.putTuple("eCostToGoal", estimatedCostToGoal);
 		helpReq.putTuple("stepsToGoal", stepsToGoal);
 		helpReq.putTuple("averageStepCost", averageCellCost);

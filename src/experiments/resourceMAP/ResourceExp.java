@@ -26,18 +26,15 @@ import experiments.datatools.CsvTool;
  */
 public class ResourceExp {
 
-	/*
-	 * Command line arguments are: [0] = number of runs, [1] = simulation to run
-	 */
 	public static void main(String[] args) {
 
 		Scanner inputScanner = new Scanner(System.in);
 
 		try {
 
-			int experimentNumber = 0;
-			int numberOfExperiments = 0;
-			int numberOfRuns = 0;
+			int experimentNumber = -1;
+			int numberOfExperiments = -1;
+			int numberOfRuns = -1;
 			
 			
 			System.out.println("Enter the experiment number:");
@@ -51,14 +48,10 @@ public class ResourceExp {
 
 			if (experimentNumber == 1)
 				runSimulation1(numberOfExperiments, numberOfRuns);
-			
-			// For running other simulations...
-			/*
-			else if (experimentNumber == 2)
-				runSimulation2(numberOfRuns);
-			else if (experimentNumber == 3)
-				runSimulation3(numberOfRuns);
-			 */
+			else{
+				System.out.println("A valid experiment was not selected, exiting program.");
+				System.exit(0);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
