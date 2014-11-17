@@ -77,10 +77,10 @@ public class ResourceMAPAgent extends Agent {
 	
 	
 	// Team well-being counters
-	public static int cond1count = 0;
-	public static int cond2count = 0;
-	public static int cond3count = 0;
-	public static int cond21count = 0;
+	//public static int cond1count = 0;
+	//public static int cond2count = 0;
+	//public static int cond3count = 0;
+	//public static int cond21count = 0;
 
 	// Replanning
 	private boolean replanned = false;
@@ -925,7 +925,7 @@ public class ResourceMAPAgent extends Agent {
 		helpReq.putTuple("nextStepCost", nextStepCost);
 
 		Double w = wellbeing();
-		helpReq.putTuple("wellbeing", Double.toString(w));
+		helpReq.putTuple("wellbeing", w);
 		lastSentWellbeing = w;
 		
 		return helpReq.toString();
