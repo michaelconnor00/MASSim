@@ -73,7 +73,7 @@ public class ResourceMAPAgent extends Agent {
 	private boolean bidding;
 	private RowCol helpeeFinalCell;
 	private ArrayList<Message> bidMsgs;
-	private ArrayList<Integer> helperAgents;  // List of agents who assisted with resources in this round
+	private ArrayList<Message> confMsgs;
 	
 	
 	// Team well-being counters
@@ -90,6 +90,8 @@ public class ResourceMAPAgent extends Agent {
 	private static Comparator<Message> teamBenefitOrder;
 	private static Comparator<Message> estimatedCostToGoalOrder;
 	private static Comparator<Message> averageStepCostOrder;
+	private static Comparator<Message> wellbeingOrder;
+
 	/**
 	 * The Constructor
 	 *
@@ -103,29 +105,36 @@ public class ResourceMAPAgent extends Agent {
 		
 		resourceAmountOrder = new Comparator<Message>() {
             @Override
-            public int compare(Message m1, Message m2) {
+            public int compare(Message m1, Message m2) { //DESC
                 return Integer.compare(m2.getIntValue("resourceAmount"), m1.getIntValue("resourceAmount"));
             }
         };
         
         teamBenefitOrder = new Comparator<Message>() {
             @Override
-            public int compare(Message m1, Message m2) {
+            public int compare(Message m1, Message m2) { //DESC
                 return Integer.compare(m2.getIntValue("teamBenefit"), m1.getIntValue("teamBenefit"));
             }
         };
 
 		estimatedCostToGoalOrder = new Comparator<Message>() {
 			@Override
-			public int compare(Message m1, Message m2) {
+			public int compare(Message m1, Message m2) { //ASC
 				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
 			}
 		};
 
 		averageStepCostOrder = new Comparator<Message>() {
 			@Override
-			public int compare(Message m1, Message m2) {
+			public int compare(Message m1, Message m2) { //ASC
 				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+			}
+		};
+
+		wellbeingOrder = new Comparator<Message>() {
+			@Override
+			public int compare(Message m1, Message m2) { //DESC
+				return Integer.compare(m2.getIntValue("wellbeing"), m1.getIntValue("wellbeing"));
 			}
 		};
 
@@ -321,25 +330,18 @@ public class ResourceMAPAgent extends Agent {
 			break;
 			
 		case S_RESPOND_BIDS:
-			// Will have to respond to multiple bids here...  How much can we give back to an agent (to R_GET_BIDS)
 			if (canSend())
 			{
-				logInf("Confirming the help offer(s) of " + helperAgents.size() + " agents.");
+				logInf("Confirming the help offer(s) of " + confMsgs.size() + " agents.");
 			
-				// Prepare and send messages to all the bids
-				Message[] messages = prepareConfirmMsgs(helperAgents);
-			
-				for (int i = 0 ; i < messages.length ; i++){
-					sendMsg(helperAgents.get(i), messages[i].toString());
+				for (int i = 0 ; i < confMsgs.size() ; i++){
+					sendMsg(confMsgs.get(i).receiver(), confMsgs.get(i).toString());
 				}
-				
-				// This send message will need to respond with unused resources (resources we can give back)? maybe not
 				
 				setState(ResMAPState.R_DO_OWN_ACT);
 			}
 			else
 				setState(ResMAPState.R_BLOCKED); 
-			/* should be checked if can not send ... */
 			break;
 			
 		case S_BLOCKED:
@@ -425,11 +427,13 @@ public class ResourceMAPAgent extends Agent {
 					if ((estimatedCost(remainingPath(pos())) <= resourcePoints) &&
 							myMaxAssistance > reqNextStepCost) {
 						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+						bidding = true;
 					}
 					// Helper does not have enough resource points to get to their goal
 					// My average step costs from current position to the goal is greater than the help requester's.
 					else if ((remainingPath(pos()).getNumPoints() / estimatedCost(remainingPath(pos()))) > reqAvgStepCostToGoal) {
 						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+						bidding = true;git 
 					}
 
 				}
@@ -460,7 +464,7 @@ public class ResourceMAPAgent extends Agent {
 			break;
 			
 		case R_GET_BIDS:
-			ArrayList<Message> bidMsgs = new ArrayList<Message>();
+			ArrayList<Message> receivedBidMsgs = new ArrayList<Message>();
 			
 			msgStr = commMedium().receive(id());
 			while (!msgStr.equals(""))
@@ -468,52 +472,68 @@ public class ResourceMAPAgent extends Agent {
 				logInf("Received a message: " + msgStr);
 				Message msg = new Message(msgStr);				
 				if (msg.isOfType(MAP_BID_MSG))
-					bidMsgs.add(msg);
+					receivedBidMsgs.add(msg);
 				 msgStr = commMedium().receive(id());
 			}
-			
-			helperAgents = new ArrayList<Integer>();
-			
-			if (bidMsgs.size() == 0)
-			{							
+
+			confMsgs = new ArrayList<Message>();
+
+			if (receivedBidMsgs.size() == 0) {
 				logInf("Nobody has offered me assistance!");
 				this.numOfUnSucHelpReq++;
-				
+
 				int cost = getCellCost(path().getNextPoint(pos()));
 				if (cost <= resourcePoints())
 					setState(ResMAPState.S_DECIDE_OWN_ACT);
-				else{
+				else {
 					setState(ResMAPState.S_BLOCKED);
 					logInf("Now I'm blocked!");
 				}
 			}
-			
 			else
 			{
-				
-				logInf("Received " + bidMsgs.size()+" bids.");
-				
-				int maxBid = Integer.MIN_VALUE;	
-				
-				// Sort the list of bids by amounts...
-				
-				for (Message bid : bidMsgs)
+				Collections.sort(receivedBidMsgs, wellbeingOrder);
+				logInf("Received " + receivedBidMsgs.size()+" bids.");
+
+				//Buffer of Cost for next step, for use when using multiple bids
+				int buffer = getCellCost(path().getNextPoint(pos()));
+
+				for (Message bid : receivedBidMsgs)
 				{
-					int bidNTB = bid.getIntValue("NTB");
-					//int offererAgent = bid.sender();
-					
-					 // Compare the net team benefit of the bid to the current max bid
-					if (bidNTB > maxBid) 
-					{
-						maxBid = bidNTB;
+					//Check If agent has sacrificed own resources to self to reach goal
+					if (bid.getIntValue("resourceAmount") == estimatedCost(remainingPath(pos()))){
+						buffer = 0;
+						resourcePoints += bid.getIntValue("resourceAmount");
+						//Use all the sacrificed resources.
+						confMsgs.add(prepareConfirmMsg(0, bid.sender()));
 					}
 				}
-				//helperAgents.add(offererAgent); 
 
-				// Prepare response messages for all bidding agents (mainly, how much resources to return)
-				// Create a global array to be used in S_RESPOND_BIDS...
+				for (int i=0; (i < receivedBidMsgs.size()) && (buffer > 0); i++){
+
+					int bidAmount = receivedBidMsgs.get(i).getIntValue("resourceAmount");
+					int helperID = receivedBidMsgs.get(i).sender();
+
+					if (bidAmount == buffer){  //Only one bid required
+						buffer = 0;
+						resourcePoints += bidAmount;
+						//Use the whole bid
+						confMsgs.add(prepareConfirmMsg(0, helperID));
+					}
+					else if (bidAmount < buffer){
+						buffer -= bidAmount;
+						resourcePoints += bidAmount;
+						//Use the whole bid
+						confMsgs.add(prepareConfirmMsg(0, helperID));
+					}
+					else{  //bidAmount > buffer
+						resourcePoints += buffer;
+						//Use part of the bid, return un-used amount
+						confMsgs.add(prepareConfirmMsg((bidAmount-buffer), helperID));
+						buffer = 0; //Or break;
+					}
+				}
 				
-				logInf(helperAgents.size() +" agents have won the bidding. (Will be providing assistance)");
 				setState(ResMAPState.S_RESPOND_BIDS);
 			}		
 			break;
@@ -943,15 +963,13 @@ public class ResourceMAPAgent extends Agent {
 	 * Prepares  a list of help confirmed messages for a list of helpers 
 	 * encoding.
 	 * 
-	 * @param helpers				The helper agent
+	 * @param helperID				The helper agent
 	 * @return						The message encoded in String
 	 */
-	private Message[] prepareConfirmMsgs(ArrayList<Integer> helpers) {
-		Message[] confirmMessages = new Message[helpers.size()];
-		for (int i = 0 ; i < helpers.size() ; i++){
-			confirmMessages[i] = new Message(id(), helpers.get(i), MAP_HELP_CONF);
-		}
-		return confirmMessages;
+	private Message prepareConfirmMsg(int returnedResources, int helperID) {
+		Message confirmMessage = new Message(id(), helperID, MAP_HELP_CONF);
+		confirmMessage.putTuple("returnedResources", returnedResources);
+		return confirmMessage;
 	}
 	
 	/**

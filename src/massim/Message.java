@@ -110,6 +110,10 @@ public class Message {
 	public int sender() {
 		return sender;
 	}
+
+	public int receiver() {
+		return receiver;
+	}
 	
 	
 }
