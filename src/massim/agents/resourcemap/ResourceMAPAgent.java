@@ -121,21 +121,21 @@ public class ResourceMAPAgent extends Agent {
 		estimatedCostToGoalOrder = new Comparator<Message>() {
 			@Override
 			public int compare(Message m1, Message m2) { //ASC
-				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+				return Double.compare(m1.getDoubleValue("eCostToGoal"), m2.getDoubleValue("eCostToGoal"));
 			}
 		};
 
 		averageStepCostOrder = new Comparator<Message>() {
 			@Override
 			public int compare(Message m1, Message m2) { //ASC
-				return Integer.compare(m1.getIntValue("teamBenefit"), m2.getIntValue("teamBenefit"));
+				return Double.compare(m1.getDoubleValue("averageStepCost"), m2.getDoubleValue("averageStepCost"));
 			}
 		};
 
 		wellbeingOrder = new Comparator<Message>() {
 			@Override
 			public int compare(Message m1, Message m2) { //DESC
-				return Integer.compare(m2.getIntValue("wellbeing"), m1.getIntValue("wellbeing"));
+				return Double.compare(m2.getDoubleValue("wellbeing"), m1.getDoubleValue("wellbeing"));
 			}
 		};
 
@@ -217,20 +217,20 @@ public class ResourceMAPAgent extends Agent {
 		
 		case S_INIT:
 			
-			double wellbeing = wellbeing();
-			double twb = teamWellbeing();
-			double twbSD = teamWellbeingStdDev();
+//			double wellbeing = wellbeing();
+//			double twb = teamWellbeing();
+//			double twbSD = teamWellbeingStdDev();
 			
-			logInf2("My wellbeing = " + wellbeing);
-			logInf2("Team wellbeing = "+twb);
-			logInf2("Team wellbeing std dev = " + twbSD);
-			
-			if (twb < 0.8 && twbSD < 0.5)
-				WLL -= 0.3;
-			if (twb > 0.8 && twbSD > 0.5)
-				WLL += 0.1;
-			if (twb > 0.8 && twbSD < 0.5)
-				WLL += 0.3;
+//			logInf2("My wellbeing = " + wellbeing);
+//			logInf2("Team wellbeing = "+twb);
+//			logInf2("Team wellbeing std dev = " + twbSD);
+//
+//			if (twb < 0.8 && twbSD < 0.5)
+//				WLL -= 0.3;
+//			if (twb > 0.8 && twbSD > 0.5)
+//				WLL += 0.1;
+//			if (twb > 0.8 && twbSD < 0.5)
+//				WLL += 0.3;
 				
 			if (dbgInf2)
 			{
@@ -239,20 +239,23 @@ public class ResourceMAPAgent extends Agent {
 			}
 
 
-			if(replanning && canReplan()) {
-				replan();
-				replanned = true;
+			if (replanning){
+				if(canReplan()) {
+					replan();
+					replanned = true;
+				}
+				else {
+					logErr("Could not replan " + resourcePoints());
+				}
 			}
-			else {
-				logErr("Could not replan " + resourcePoints());
-			}
+
 
 
 			if (reachedGoal())
 			{
 					if (canBCast()) {
 					logInf2("Broadcasting my wellbeing to the team");
-					broadcastMsg(prepareWellbeingUpMsg(wellbeing));
+					broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
 					}
 				setState(ResMAPState.R_GET_HELP_REQ);
 			}
@@ -261,7 +264,7 @@ public class ResourceMAPAgent extends Agent {
 				RowCol nextCell = path().getNextPoint(pos());			
 				int cost = getCellCost(nextCell);
 				
-				boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);  // Devin : request threshold required?
+				boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);
 				
 				// Condition counters
 				//if (cost > resourcePoints()) cond1count++;
@@ -277,7 +280,8 @@ public class ResourceMAPAgent extends Agent {
 
 						// Create the help request message
 						double eCost = estimatedCost(remainingPath(pos()));
-						double avgCellCostToGoal = estimatedCost(path)/remainingPath(pos()).getNumPoints();
+						int remPath = remainingPath(pos()).getNumPoints();
+						double avgCellCostToGoal = eCost/remPath;
 						int nextCellCost = getCellCost(path().getNextPoint(pos()));
 
 						String helpReqMsg = prepareHelpReqMsg(remainingPath(pos()).getNumPoints(),
@@ -408,7 +412,7 @@ public class ResourceMAPAgent extends Agent {
 
 					if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
 							(resourcePoints - Team.unicastCost) >= reqECostToGoal) {
-						bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal, wellbeing()));
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), wellbeing()));
 						helpReqMsgs.remove(helpReqMsgs.get(i));
 						bidding = true;
 						break;
@@ -924,10 +928,9 @@ public class ResourceMAPAgent extends Agent {
 		helpReq.putTuple("averageStepCost", averageCellCost);
 		helpReq.putTuple("nextStepCost", nextStepCost);
 
-		Double w = wellbeing();
-		helpReq.putTuple("wellbeing", w);
-		lastSentWellbeing = w;
-		
+		helpReq.putTuple("wellbeing", wellbeing());
+//		lastSentWellbeing = wellbeing();
+
 		return helpReq.toString();
 	}
 	
@@ -954,11 +957,11 @@ public class ResourceMAPAgent extends Agent {
 	 * @param requester				The help requester agent
 	 * @return						The message encoded in String
 	 */
-	private Message prepareBidMsg(int requester, double resourceAmount, double helperWellBeing) {
+	private Message prepareBidMsg(int requester, int resourceAmount, double helperWellBeing) {
 		Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
 		bidMsg.putTuple("resourceAmount", resourceAmount);
 		bidMsg.putTuple("requester", requester);
-		bidMsg.putTuple("wellBeing", helperWellBeing );
+		bidMsg.putTuple("wellbeing", helperWellBeing );
 		
 		return bidMsg;
 	}
@@ -1290,7 +1293,7 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private void logInf2(String msg) {
 		if (dbgInf2)
-			System.err.println("[AdvActionMAP2 Agent " + id() + "]: " + msg);
+			System.err.println("[ResourceMAP Agent " + id() + "]: " + msg);
 	}
 	
 	/**
@@ -1301,7 +1304,7 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private void logErr(String msg) {
 		if (dbgErr)
-			System.out.println("[xxxxxxxxxxx][AdvActionMAP2 Agent " + id() + 
+			System.out.println("[xxxxxxxxxxx][ResourceMAP Agent " + id() +
 							   "]: " + msg);
 	}
 }

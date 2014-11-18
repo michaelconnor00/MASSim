@@ -48,6 +48,9 @@ public class ResourceExp {
 
 			if (experimentNumber == 1)
 				runSimulation1(numberOfExperiments, numberOfRuns);
+			else if (experimentNumber == 2){
+				runSimulation2(numberOfExperiments, numberOfRuns);
+			}
 			else{
 				System.out.println("A valid experiment was not selected, exiting program.");
 				System.exit(0);
@@ -175,7 +178,10 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 			
-			
+			ResourceMAPAgent.canSacrifice = false;
+			ResourceMAPAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPAgent.replanning = false;
+
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * expNumber;
 
@@ -230,48 +236,60 @@ public class ResourceExp {
 		System.out.println("Experiment Complete.  Data saved to csv output file.");
 	}
 
-	
-	
-	
-	/*
-	
-	public static void runSimulation2(int numberOfRuns) throws Exception {
+
+	public static void runSimulation2(int numberOfExperiments, int numberOfRuns) throws Exception {
 
 		if (numberOfRuns < 1)
 			throw new Exception("numberOfRuns is invalid!");
 
+		if (numberOfExperiments < 1)
+			throw new Exception("numberOfExperiments is invalid!");
+
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
-		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250,
-				300, 350, 500 };
+		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250, 300, 350, 500 };
 
-		Team.teamSize = 8;
+		Team.teamSize = 5;
 
-		System.out
-				.println("InitResource NoHelp NoHelpOpt Difference NoHelpRep RepCount NoHelpRepOpt RepCount "
-						+ "Difference Help HelpOpt Difference HelpRep RepCount HelpRepOpt RepCount Difference");
+		// Set up the CSV file for experiment output:
+		String[] csv_columns = {"Run Number",
+				"Disturbance Amount",
+				"No Help Score",
+				"No Help Re-plan Score",
+				"Help Score",
+				"Help Re-plan Score",
+				"ResourceMAP Score",
+		};
 
-		for (int exp2 = 0; exp2 < 11; exp2++) {
 
-			Team[] teams = new Team[8];
+		CsvTool csv_file = new CsvTool("Experiment2Output", csv_columns);
 
+		/* The experiments loop */
+
+		for (int i = 0; i < numberOfExperiments; i++) {
+
+			/* Create the teams involved in the simulation */
+			Team[] teams = new Team[Team.teamSize];
+
+			// No help team
 			teams[0] = new NoHelpTeam();
-			teams[1] = new NoHelpTeam();
-			teams[1].setOptimumAssign(true);
 
-			teams[2] = new NoHelpRepTeam();
-			teams[3] = new NoHelpRepTeam();
-			teams[3].setOptimumAssign(true);
+			// No help, re-plan team
+			teams[1] = new NoHelpRepTeam();
 
-			teams[4] = new AdvActionMAPTeam();
-			teams[5] = new AdvActionMAPTeam();
-			teams[5].setOptimumAssign(true);
+			// Advanced action MAP team
+			teams[2] = new AdvActionMAPTeam();
 
-			teams[6] = new AdvActionMAPRepTeam();
-			teams[7] = new AdvActionMAPRepTeam();
-			teams[7].setOptimumAssign(true);
+			// Advanced action MAP, re-plan
+			teams[3] = new AdvActionMAPRepTeam();
 
+			// Resource MAP
+			teams[4] = new ResourceMAPTeam();
+
+			/* Create the SimulationEngine */
 			SimulationEngine se = new SimulationEngine(teams);
+
+			/* Set the experiment-wide parameters: */
 
 			Team.unicastCost = 1;
 			Team.broadcastCost = Team.unicastCost * (Team.teamSize - 1);
@@ -281,105 +299,12 @@ public class ResourceExp {
 			TeamTask.helpOverhead = 20;
 			TeamTask.cellReward = 100;
 			TeamTask.achievementReward = 2000;
-
-			TeamTask.initResCoef = 100 + 10 * exp2;
-
-			NoHelpRepAgent.WREP = -0.25;
-
-			AdvActionMAPAgent.WLL = -0.1;
-			AdvActionMAPAgent.requestThreshold = 351;
-			AdvActionMAPAgent.lowCostThreshold = 50;
-			AdvActionMAPAgent.importanceVersion = 2;
-
-			AdvActionMAPRepAgent.WLL = -0.1;
-			AdvActionMAPRepAgent.WREP = -0.25;
-			AdvActionMAPRepAgent.requestThreshold = 351;
-			AdvActionMAPRepAgent.lowCostThreshold = 50;
-			AdvActionMAPRepAgent.importanceVersion = 2;
-
-			SimulationEngine.disturbanceLevel = 0.1;
-
-			se.initializeExperiment(numberOfRuns);
-			int[] teamScores = se.runExperiment();
-
-			int averageReplan2 = (int) Math
-					.round((double) ((NoHelpRepTeam) teams[2])
-							.getReplanCounts() / numberOfRuns);
-			int averageReplan3 = (int) Math
-					.round((double) ((NoHelpRepTeam) teams[3])
-							.getReplanCounts() / numberOfRuns);
-			int averageReplan6 = (int) Math
-					.round((double) ((AdvActionMAPRepTeam) teams[6])
-							.getReplanCounts() / numberOfRuns);
-			int averageReplan7 = (int) Math
-					.round((double) ((AdvActionMAPRepTeam) teams[7])
-							.getReplanCounts() / numberOfRuns);
-
-			if (teamScores.length > 1) {
-				System.out.println(String.format("%d" + "\t%d\t%d\t%d\t%d"
-						+ "\t%d\t%d\t%d\t%d" + "\t%d\t%d\t%d\t%d"
-						+ "\t%d\t%d\t%d\t%d", TeamTask.initResCoef,
-						teamScores[0], teamScores[1], teamScores[1]
-								- teamScores[0], teamScores[2], averageReplan2,
-						teamScores[3], averageReplan3, teamScores[3]
-								- teamScores[2], teamScores[4], teamScores[5],
-						teamScores[5] - teamScores[4], teamScores[6],
-						averageReplan6, teamScores[7], averageReplan7,
-						teamScores[7] - teamScores[6]));
-			} else
-				System.out.println("Score : 0");
-		}
-	}
-
-	public static void runSimulation3(int numberOfRuns) throws Exception {
-
-		if (numberOfRuns < 1)
-			throw new Exception("numberOfRuns is invalid!");
-
-		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
-		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
-		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250,
-				300, 350, 500 };
-
-		Team.teamSize = 8;
-
-		System.out
-				.println("UnicastCost NoHelp NoHelpOpt Difference NoHelpRep RepCount NoHelpRepOpt RepCount "
-						+ "Difference Help HelpOpt Difference HelpRep RepCount HelpRepOpt RepCount Difference");
-
-		for (int exp3 = 0; exp3 < 11; exp3++) {
-
-			Team[] teams = new Team[8];
-
-			teams[0] = new NoHelpTeam();
-			teams[1] = new NoHelpTeam();
-			teams[1].setOptimumAssign(true);
-
-			teams[2] = new NoHelpRepTeam();
-			teams[3] = new NoHelpRepTeam();
-			teams[3].setOptimumAssign(true);
-
-			teams[4] = new AdvActionMAPTeam();
-			teams[5] = new AdvActionMAPTeam();
-			teams[5].setOptimumAssign(true);
-
-			teams[6] = new AdvActionMAPRepTeam();
-			teams[7] = new AdvActionMAPRepTeam();
-			teams[7].setOptimumAssign(true);
-
-			SimulationEngine se = new SimulationEngine(teams);
-
-			Team.unicastCost = 1 + 2 * exp3;
-
-			Team.broadcastCost = Team.unicastCost * (Team.teamSize - 1);
-			Agent.calculationCost = 1;
-			Agent.planCostCoeff = 0.025;
-
-			TeamTask.helpOverhead = 20;
-			TeamTask.cellReward = 100;
-			TeamTask.achievementReward = 2000;
 			TeamTask.initResCoef = 160;
 
+			TeamTask.resourceAssistanceOverhead = 10;
+
+			/* Set the Team Attributes */
+
 			NoHelpRepAgent.WREP = -0.25;
 
 			AdvActionMAPAgent.WLL = -0.1;
@@ -393,40 +318,36 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			SimulationEngine.disturbanceLevel = 0.1;
+			ResourceMAPAgent.canSacrifice = false;
+			ResourceMAPAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPAgent.replanning = false;
 
+			/* vary the disturbance */
+			SimulationEngine.disturbanceLevel = 0.05 * i;
+
+			/* Initialize and run the experiment */
 			se.initializeExperiment(numberOfRuns);
 			int[] teamScores = se.runExperiment();
 
-			int averageReplan2 = (int) Math
-					.round((double) ((NoHelpRepTeam) teams[2])
-							.getReplanCounts() / numberOfRuns);
-			int averageReplan3 = (int) Math
-					.round((double) ((NoHelpRepTeam) teams[3])
-							.getReplanCounts() / numberOfRuns);
-			int averageReplan6 = (int) Math
-					.round((double) ((AdvActionMAPRepTeam) teams[6])
-							.getReplanCounts() / numberOfRuns);
-			int averageReplan7 = (int) Math
-					.round((double) ((AdvActionMAPRepTeam) teams[7])
-							.getReplanCounts() / numberOfRuns);
+			// Add run data to csv file as a new row of data
+			String[] run_data = {
+					String.valueOf(i+1),
+					String.valueOf(SimulationEngine.disturbanceLevel),
+					String.valueOf(teamScores[0]),
+					String.valueOf(teamScores[1]),
+					String.valueOf(teamScores[2]),
+					String.valueOf(teamScores[3]),
+					String.valueOf(teamScores[4])
+			};
 
-			if (teamScores.length > 1) {
-				System.out.println(String.format("%d" + "\t%d\t%d\t%d\t%d"
-						+ "\t%d\t%d\t%d\t%d" + "\t%d\t%d\t%d\t%d"
-						+ "\t%d\t%d\t%d\t%d", Team.unicastCost, teamScores[0],
-						teamScores[1], teamScores[1] - teamScores[0],
-						teamScores[2], averageReplan2, teamScores[3],
-						averageReplan3, teamScores[3] - teamScores[2],
-						teamScores[4], teamScores[5], teamScores[5]
-								- teamScores[4], teamScores[6], averageReplan6,
-						teamScores[7], averageReplan7, teamScores[7]
-								- teamScores[6]));
-			} else
-				System.out.println("Score : 0");
+			csv_file.appendRow(run_data);
+			System.out.println("Experiment " + i +" done.");
 		}
-	}
-	
-	*/
+		// End of all experiment runs
 
+		csv_file.closeFileIO();
+		System.out.println("Experiment Complete.  Data saved to csv output file.");
+	}
 }
+
+
