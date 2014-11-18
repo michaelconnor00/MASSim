@@ -25,7 +25,7 @@ public class ResourceMAPAgent extends Agent {
 	// Adjustable Parameters:
 
 	// Re-Planning
-	public static boolean replanning = false;
+	public static boolean replanning;
 
 	// Request and cost thresholds
 	//public static double requestThreshold;
