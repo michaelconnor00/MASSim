@@ -1,5 +1,6 @@
 package experiments.resourceMAP;
 
+import experiments.datatools.ExperimentMetaDataOutput;
 import massim.Agent;
 import massim.SimulationEngine;
 import massim.Team;
@@ -48,9 +49,9 @@ public class ResourceExp {
 			numberOfRuns = inputScanner.nextInt();
 
 			// Old experiment..., variable: disturbance amount
-			if (experimentNumber == 1)
+			if (experimentNumber == 1) {
 				runSimulation1(numberOfExperiments, numberOfRuns);
-
+			}
 			// 6 Teams, variable: disturbance amount
 			else if (experimentNumber == 2){
 				runSimulation2(numberOfExperiments, numberOfRuns);
@@ -116,7 +117,7 @@ public class ResourceExp {
 								};
 		
 		
-		CsvTool csv_file = new CsvTool("Experiment1Output", csv_columns);
+		CsvTool csv_file = new CsvTool("Simulation1Output", csv_columns);
 	
 		/* The experiments loop */
 
@@ -246,7 +247,10 @@ public class ResourceExp {
 		// End of all experiment runs
 		
 		csv_file.closeFileIO();
-		System.out.println("Experiment Complete.  Data saved to csv output file.");
+		System.out.println("Simulation Complete.  Data saved to csv output file.");
+
+		ExperimentMetaDataOutput.exportSimulationMetadata("Simulation1", numberOfExperiments, numberOfRuns);
+		System.out.println("Experiment Metadata saved to output text file.");
 	}
 
 
@@ -276,7 +280,7 @@ public class ResourceExp {
 		};
 
 
-		CsvTool csv_file = new CsvTool("Experiment2Output", csv_columns);
+		CsvTool csv_file = new CsvTool("Simulation2Output", csv_columns);
 
 		/* The experiments loop */
 
@@ -361,7 +365,10 @@ public class ResourceExp {
 		// End of all experiment runs
 
 		csv_file.closeFileIO();
-		System.out.println("Experiment Complete.  Data saved to csv output file.");
+		System.out.println("Simulation Complete.  Data saved to csv output file.");
+
+		ExperimentMetaDataOutput.exportSimulationMetadata("Simulation2", numberOfExperiments, numberOfRuns);
+		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
 	public static void runSimulation3(int numberOfExperiments, int numberOfRuns) throws Exception {
@@ -390,7 +397,7 @@ public class ResourceExp {
 		};
 
 
-		CsvTool csv_file = new CsvTool("Experiment2Output", csv_columns);
+		CsvTool csv_file = new CsvTool("Simulation3Output", csv_columns);
 
 		/* The experiments loop */
 
@@ -475,7 +482,10 @@ public class ResourceExp {
 		// End of all experiment runs
 
 		csv_file.closeFileIO();
-		System.out.println("Experiment Complete.  Data saved to csv output file.");
+		System.out.println("Simulation Complete.  Data saved to csv output file.");
+
+		ExperimentMetaDataOutput.exportSimulationMetadata("Simulation3", numberOfExperiments, numberOfRuns);
+		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
 	public static void runSimulation4(int numberOfExperiments, int numberOfRuns) throws Exception {
@@ -504,7 +514,7 @@ public class ResourceExp {
 		};
 
 
-		CsvTool csv_file = new CsvTool("Experiment2Output", csv_columns);
+		CsvTool csv_file = new CsvTool("Simulation4Output", csv_columns);
 
 		/* The experiments loop */
 
@@ -589,7 +599,10 @@ public class ResourceExp {
 		// End of all experiment runs
 
 		csv_file.closeFileIO();
-		System.out.println("Experiment Complete.  Data saved to csv output file.");
+		System.out.println("Simulation Complete.  Data saved to csv output file.");
+
+		ExperimentMetaDataOutput.exportSimulationMetadata("Simulation4", numberOfExperiments, numberOfRuns);
+		System.out.println("Simulation Metadata saved to output text file.");
 	}
 }
 
