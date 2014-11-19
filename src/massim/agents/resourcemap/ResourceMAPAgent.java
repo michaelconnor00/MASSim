@@ -24,9 +24,6 @@ public class ResourceMAPAgent extends Agent {
 
 	// Adjustable Parameters:
 
-	// Re-Planning
-	public static boolean replanning;
-
 	// Request and cost thresholds
 	//public static double requestThreshold;
 	//public static double lowCostThreshold;
@@ -48,9 +45,7 @@ public class ResourceMAPAgent extends Agent {
 		R_BLOCKED,
 		R_GET_BID_CONF
 	}
-	
 
-	
 	// Message types for MAP
 	private final static int MAP_HELP_REQ_MSG = 1;
 	private final static int MAP_BID_MSG = 2;
@@ -82,8 +77,6 @@ public class ResourceMAPAgent extends Agent {
 	//public static int cond3count = 0;
 	//public static int cond21count = 0;
 
-	// Replanning
-	private boolean replanned = false;
 
 	// Custom Comparators
 	private static Comparator<Message> resourceAmountOrder;
@@ -236,17 +229,6 @@ public class ResourceMAPAgent extends Agent {
 			{
 				for(int i=0;i<Team.teamSize;i++)
 					System.out.println("Agent "+i+":" + agentsWellbeing[i]);
-			}
-
-
-			if (replanning){
-				if(canReplan()) {
-					replan();
-					replanned = true;
-				}
-				else {
-					logErr("Could not replan " + resourcePoints());
-				}
 			}
 
 
@@ -1109,19 +1091,6 @@ public class ResourceMAPAgent extends Agent {
 
 
 	/**
-	 * Does Replanning
-	 */
-	private void replan()
-	{
-		findPath();
-		//repRound = roundCount;
-		logInf("Re-planning: Chose this path: " + path().toString());
-		numOfReplans++;
-		replanned = true;
-	}
-
-
-	/**
 	 * Finds the lowest cost path among shortest paths of a rectangular board
 	 * based on the Polajnar's algorithm V2.
 	 *
@@ -1217,14 +1186,7 @@ public class ResourceMAPAgent extends Agent {
 //		return (resourcePoints() >= Agent.calculationCost);
 //	}
 
-	/**
-	 * Checks whether the agent has enough resources in order to replan
-	 *
-	 * @author Mojtaba
-	 */
-	private boolean canReplan() {
-		return (resourcePoints() >= planCost());
-	}
+
 
 	/**
 	 * Broadcast the given String encoded message.

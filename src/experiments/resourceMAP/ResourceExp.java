@@ -11,7 +11,8 @@ import massim.agents.advancedactionmap.AdvActionMAPTeam;
 import massim.agents.nohelp.NoHelpTeam;
 import massim.agents.nohelp.NoHelpRepTeam;
 import massim.agents.nohelp.NoHelpRepAgent;
-import massim.agents.resourcemap.ResourceMAPAgent;
+import massim.agents.resourcemap.ResourceMAPRepAgent;
+import massim.agents.resourcemap.ResourceMAPRepTeam;
 import massim.agents.resourcemap.ResourceMAPTeam;
 
 import java.util.*;
@@ -178,9 +179,8 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 			
-			ResourceMAPAgent.canSacrifice = false;
-			ResourceMAPAgent.costToGoalHelpThreshold = 1.1;
-			ResourceMAPAgent.replanning = false;
+			ResourceMAPRepAgent.canSacrifice = false;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * expNumber;
@@ -249,16 +249,17 @@ public class ResourceExp {
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
 		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250, 300, 350, 500 };
 
-		Team.teamSize = 5;
+		Team.teamSize = 6;
 
 		// Set up the CSV file for experiment output:
 		String[] csv_columns = {"Run Number",
 				"Disturbance Amount",
 				"No Help Score",
 				"No Help Re-plan Score",
-				"Help Score",
-				"Help Re-plan Score",
+				"AdvActionMAP Score",
+				"AdvActionMAP Re-plan Score",
 				"ResourceMAP Score",
+				"ResourceMAP Re-plan Score"
 		};
 
 
@@ -285,6 +286,10 @@ public class ResourceExp {
 
 			// Resource MAP
 			teams[4] = new ResourceMAPTeam();
+
+			// Resource MAP, re=plan
+			teams[5] = new ResourceMAPRepTeam();
+
 
 			/* Create the SimulationEngine */
 			SimulationEngine se = new SimulationEngine(teams);
@@ -318,9 +323,8 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPAgent.canSacrifice = false;
-			ResourceMAPAgent.costToGoalHelpThreshold = 1.1;
-			ResourceMAPAgent.replanning = false;
+			ResourceMAPRepAgent.canSacrifice = false;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * i;
@@ -337,7 +341,8 @@ public class ResourceExp {
 					String.valueOf(teamScores[1]),
 					String.valueOf(teamScores[2]),
 					String.valueOf(teamScores[3]),
-					String.valueOf(teamScores[4])
+					String.valueOf(teamScores[4]),
+					String.valueOf(teamScores[5])
 			};
 
 			csv_file.appendRow(run_data);
