@@ -380,7 +380,7 @@ public class ResourceExp {
 
 		// Set up the CSV file for experiment output:
 		String[] csv_columns = {"Run Number",
-				"Disturbance Amount",
+				"Resource Co-efficient",
 				"No Help Score",
 				"No Help Re-plan Score",
 				"AdvActionMAP Score",
@@ -494,7 +494,7 @@ public class ResourceExp {
 
 		// Set up the CSV file for experiment output:
 		String[] csv_columns = {"Run Number",
-				"Disturbance Amount",
+				"Resource Co-efficient",
 				"No Help Score",
 				"No Help Re-plan Score",
 				"AdvActionMAP Score",
