@@ -30,7 +30,7 @@ public class ResourceMAPRepAgent extends Agent {
     //public static double EPSILON;
 
     // Resource MAP toggles
-    public static boolean canSacrifice;
+    public static boolean canSacrifice = true;
     //public static boolean multipleBids;  // Maybe implement this in the future
     public static double costToGoalHelpThreshold = 1.1;
 
@@ -238,7 +238,7 @@ public class ResourceMAPRepAgent extends Agent {
                     replanned = true;
                 }
                 else {
-                    logErr("Could not replan " + resourcePoints());
+                    //logErr("Could not replan " + resourcePoints());
                 }
 
 
@@ -296,6 +296,7 @@ public class ResourceMAPRepAgent extends Agent {
                 break;
 
             case S_RESPOND_TO_REQ:
+
                 if(bidding && canSend())
                 {
                     for (Message msg : bidMsgs){
@@ -330,6 +331,7 @@ public class ResourceMAPRepAgent extends Agent {
                 break;
 
             case S_RESPOND_BIDS:
+
                 if (canSend())
                 {
                     logInf("Confirming the help offer(s) of " + confMsgs.size() + " agents.");
@@ -403,7 +405,7 @@ public class ResourceMAPRepAgent extends Agent {
                         int requesterAgent = helpReqMsgs.get(i).sender();
 
                         if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
-                                (resourcePoints - Team.unicastCost) >= reqECostToGoal) {
+                                (resourcePoints - Team.unicastCost - TeamTask.helpOverhead) >= reqECostToGoal) {
                             bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), wellbeing()));
                             helpReqMsgs.remove(helpReqMsgs.get(i));
                             bidding = true;
@@ -411,7 +413,7 @@ public class ResourceMAPRepAgent extends Agent {
                         }
                     }
 
-                    int myMaxAssistance = resourcePoints - (int) estimatedCost(remainingPath(pos()));
+                    int myMaxAssistance = resourcePoints - (int) estimatedCost(remainingPath(pos())) - TeamTask.helpOverhead;
 
                     // Sort by average step cost to goal, in ascending order.
                     Collections.sort(helpReqMsgs, averageStepCostOrder);
@@ -424,7 +426,7 @@ public class ResourceMAPRepAgent extends Agent {
                         int requesterAgent = helpReqMsgs.get(i).sender();
 
                         // Helper has enough resources to reach their own goal
-                        if ((estimatedCost(remainingPath(pos())) <= resourcePoints) &&
+                        if ((estimatedCost(remainingPath(pos())) <= resourcePoints - TeamTask.helpOverhead) &&
                                 myMaxAssistance > reqNextStepCost) {
                             bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
                             bidding = true;
@@ -518,18 +520,18 @@ public class ResourceMAPRepAgent extends Agent {
                             buffer = 0;
                             resourcePoints += bidAmount;
                             //Use the whole bid
-                            confMsgs.add(prepareConfirmMsg(0, helperID));
+                            confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
                         }
                         else if (bidAmount < buffer){
                             buffer -= bidAmount;
                             resourcePoints += bidAmount;
                             //Use the whole bid
-                            confMsgs.add(prepareConfirmMsg(0, helperID));
+                            confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
                         }
                         else{  //bidAmount > buffer
                             resourcePoints += buffer;
                             //Use part of the bid, return un-used amount
-                            confMsgs.add(prepareConfirmMsg((bidAmount-buffer), helperID));
+                            confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID));
                             buffer = 0; //Or break;
                         }
                     }
@@ -553,10 +555,11 @@ public class ResourceMAPRepAgent extends Agent {
 
                 if (!msgStr.equals("") && (new Message(msgStr)).isOfType(MAP_HELP_CONF))
                 {
-                    //int returnedResources;  // resources to be re-added to an agents available resources
+                    int returnedResources =(new Message(msgStr)).getIntValue("returnedResources");  // resources to be re-added to an agents available resources
+                    resourcePoints += returnedResources; // This may be a negative number, since the helper is 'charged' the help overhead upon confirmation.
                     logInf("Received confirmation, my resource offering was used.");  // Output information about full or partial resource use
                     this.numOfSucOffers++;
-                    //setState(ResMAPState.S_DECIDE_HELP_ACT);
+
                 }
 
                 else
