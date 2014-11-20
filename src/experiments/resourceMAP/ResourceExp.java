@@ -67,6 +67,11 @@ public class ResourceExp {
 				runSimulation4(numberOfExperiments, numberOfRuns);
 			}
 
+			// 6 Teams, variable: increasing unicast costs
+			else if (experimentNumber == 5){
+				runSimulation5(numberOfExperiments, numberOfRuns);
+			}
+
 			else{
 				System.out.println("A valid experiment was not selected, exiting program.");
 				System.exit(0);
@@ -602,6 +607,123 @@ public class ResourceExp {
 		System.out.println("Simulation Complete.  Data saved to csv output file.");
 
 		ExperimentMetaDataOutput.exportSimulationMetadata("Simulation4", numberOfExperiments, numberOfRuns);
+		System.out.println("Simulation Metadata saved to output text file.");
+	}
+
+	public static void runSimulation5(int numberOfExperiments, int numberOfRuns) throws Exception {
+
+		if (numberOfRuns < 1)
+			throw new Exception("numberOfRuns is invalid!");
+
+		if (numberOfExperiments < 1)
+			throw new Exception("numberOfExperiments is invalid!");
+
+		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
+		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
+		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250, 300, 350, 500 };
+
+		Team.teamSize = 6;
+
+		// Set up the CSV file for experiment output:
+		String[] csv_columns = {"Run Number",
+				"Unicast cost",
+				"No Help Score",
+				"No Help Re-plan Score",
+				"AdvActionMAP Score",
+				"AdvActionMAP Re-plan Score",
+				"ResourceMAP Score",
+				"ResourceMAP Re-plan Score"
+		};
+
+
+		CsvTool csv_file = new CsvTool("Simulation5Output", csv_columns);
+
+		/* The experiments loop */
+
+		for (int i = 1; i <= numberOfExperiments; i++) {
+
+			/* Create the teams involved in the simulation */
+			Team[] teams = new Team[Team.teamSize];
+
+			// No help team
+			teams[0] = new NoHelpTeam();
+
+			// No help, re-plan team
+			teams[1] = new NoHelpRepTeam();
+
+			// Advanced action MAP team
+			teams[2] = new AdvActionMAPTeam();
+
+			// Advanced action MAP, re-plan
+			teams[3] = new AdvActionMAPRepTeam();
+
+			// Resource MAP
+			teams[4] = new ResourceMAPTeam();
+
+			// Resource MAP, re=plan
+			teams[5] = new ResourceMAPRepTeam();
+
+
+			/* Create the SimulationEngine */
+			SimulationEngine se = new SimulationEngine(teams);
+
+			/* Set the experiment-wide parameters: */
+
+			Team.unicastCost = 2 * i;
+			Team.broadcastCost = Team.unicastCost * (Team.teamSize - 1);
+			Agent.calculationCost = 1;
+			Agent.planCostCoeff = 0.025;
+
+			TeamTask.helpOverhead = 20;
+			TeamTask.cellReward = 100;
+			TeamTask.achievementReward = 2000;
+			TeamTask.initResCoef = 160;
+
+
+			/* Set the Team Attributes */
+
+			NoHelpRepAgent.WREP = -0.25;
+
+			AdvActionMAPAgent.WLL = -0.1;
+			AdvActionMAPAgent.requestThreshold = 351;
+			AdvActionMAPAgent.lowCostThreshold = 50;
+			AdvActionMAPAgent.importanceVersion = 2;
+
+			AdvActionMAPRepAgent.WLL = -0.1;
+			AdvActionMAPRepAgent.WREP = -0.25;
+			AdvActionMAPRepAgent.requestThreshold = 351;
+			AdvActionMAPRepAgent.lowCostThreshold = 50;
+			AdvActionMAPRepAgent.importanceVersion = 2;
+
+			/* vary the disturbance */
+			SimulationEngine.disturbanceLevel = 0.05;
+
+			/* Initialize and run the experiment */
+			se.initializeExperiment(numberOfRuns);
+			int[] teamScores = se.runExperiment();
+
+			// Add run data to csv file as a new row of data
+			String[] run_data = {
+					String.valueOf(i),
+					String.valueOf(Team.unicastCost),
+					String.valueOf(teamScores[0]),
+					String.valueOf(teamScores[1]),
+					String.valueOf(teamScores[2]),
+					String.valueOf(teamScores[3]),
+					String.valueOf(teamScores[4]),
+					String.valueOf(teamScores[5])
+			};
+
+			csv_file.appendRow(run_data);
+
+			System.out.println("Experiment " + i +" done.");
+		}
+		// End of all experiment runs
+
+		csv_file.closeFileIO();
+		System.out.println("Simulation Complete.  Data saved to csv output file.");
+
+		ExperimentMetaDataOutput.exportSimulationMetadata("Simulation5", numberOfExperiments, numberOfRuns);
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 }
