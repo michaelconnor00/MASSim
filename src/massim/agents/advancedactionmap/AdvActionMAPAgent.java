@@ -930,30 +930,20 @@ public class AdvActionMAPAgent extends Agent {
 	private int calcTeamBenefit(RowCol skipCell) {
 		
 		decResourcePoints(Agent.calculationCost);
-		int withHelpRewards = 
-			projectRewardPoints(resourcePoints(), skipCell);  
+
+		int withHelpRewards = projectRewardPoints(resourcePoints(), skipCell);
 			//Agent.cellReward; 
 		
-		int noHelpRewards = 
-			projectRewardPoints(resourcePoints(), pos());
+		int noHelpRewards = projectRewardPoints(resourcePoints(), pos());
 		
-		int withHelpRemPathLength = 
-			path().getNumPoints() - 
-			findFinalPos(resourcePoints(),skipCell) -
-			1 ;
+		int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),skipCell) - 1 ;
 		
-		int noHelpRemPathLength = 
-			path().getNumPoints() - 
-			findFinalPos(resourcePoints(),pos()) -
-			1;
+		int noHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),pos()) - 1;
 		
 		if(importanceVersion == 1)
 			return withHelpRewards - noHelpRewards;
 		
-		return 
-			(withHelpRewards-noHelpRewards) *
-			(1+
-			(importance(withHelpRemPathLength)-importance(noHelpRemPathLength)));
+		return (withHelpRewards-noHelpRewards) * (1+ (importance(withHelpRemPathLength)-importance(noHelpRemPathLength)));
 	//	* (noHelpRemPathLength-withHelpRemPathLength)); 
 	}
 	

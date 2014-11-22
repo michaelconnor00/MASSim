@@ -3,8 +3,8 @@
 
 
 
-### Questions
+## Questions
 
-* What is the purpose of the dummy states?
-* What do R and S represent? 
-* 
+* line 236: what is requestThreshold used for?
+* I don't see where the Collection is sorted by average step in R_GET_BIDS
+*
