@@ -2,3 +2,5 @@
 .idea/
 *.iml
 *.eml
+*.csv
+*.tab

@@ -2,12 +2,12 @@ package massim.agents.resourcemap;
 
 /**
  * ResourceMAP Team
- * 
- * @author Devin Calado 
+ *
+ * @author Devin Calado, Michael Conner
+ * @version 1.0 - November 2014
  */
 
 import massim.Team;
-import massim.agents.advancedactionmap.AdvActionMAPRepAgent;
 
 public class ResourceMAPTeam extends Team {
 	/**
