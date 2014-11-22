@@ -188,68 +188,52 @@
     </configProperties>
     <configValues>
         <entry>
-            <key>Action Costs</key>
-            <value>10,40,100,150,250,300,350,500</value>
-        </entry>
-        <entry>
-            <key>Pulse Occurrence</key>
-            <value></value>
+            <key>Cell Reward</key>
+            <value>100</value>
         </entry>
         <entry>
             <key>Pulse Level</key>
             <value>0.8</value>
         </entry>
         <entry>
-            <key>Additional Leader Resource</key>
-            <value>0</value>
+            <key>Use Remaining Resources</key>
+            <value>No</value>
         </entry>
         <entry>
-            <key>Board Size</key>
-            <value>10</value>
-        </entry>
-        <entry>
-            <key>Plan Cost Coefficient</key>
-            <value>0.03</value>
-        </entry>
-        <entry>
-            <key>Unicast Cost</key>
-            <value>1,1,5</value>
-        </entry>
-        <entry>
-            <key>Number of Runs</key>
-            <value>5</value>
+            <key>Action Costs</key>
+            <value>10,40,100,150,250,300,350,500</value>
         </entry>
         <entry>
             <key>Assignment Overhead</key>
             <value>10</value>
         </entry>
         <entry>
-            <key>Number of Colors</key>
-            <value>6</value>
+            <key>Initial Resource Coefficient</key>
+            <value>160</value>
         </entry>
         <entry>
-            <key>Team Size</key>
-            <value>8</value>
+            <key>Plan Cost Coefficient</key>
+            <value>0.03</value>
         </entry>
         <entry>
-            <key>Help Overhead</key>
-            <value>20</value>
+            <key>Number of Runs</key>
+            <value>5</value>
         </entry>
         <entry>
             <key>Swap Overhead</key>
             <value>20</value>
         </entry>
         <entry>
-            <key>Cell Reward</key>
-            <value>100</value>
+            <key>Unicast Cost</key>
+            <value>1,1,5</value>
         </entry>
         <entry>
-            <key>Initial Resource Coefficient</key>
-            <value>160</value>
+            <key>Help Overhead</key>
+            <value>20</value>
         </entry>
         <entry>
-            <key>Use Remaining Resources</key>
-            <value>No</value>
+            <key>Team Size</key>
+            <value>8</value>
         </entry>
         <entry>
             <key>Calc Cost</key>
@@ -258,6 +242,22 @@
         <entry>
             <key>Disturbance</key>
             <value>0.1</value>
+        </entry>
+        <entry>
+            <key>Additional Leader Resource</key>
+            <value>0</value>
+        </entry>
+        <entry>
+            <key>Number of Colors</key>
+            <value>6</value>
+        </entry>
+        <entry>
+            <key>Board Size</key>
+            <value>10</value>
+        </entry>
+        <entry>
+            <key>Pulse Occurrence</key>
+            <value></value>
         </entry>
         <entry>
             <key>Achievement Reward</key>
@@ -372,44 +372,44 @@
         </configProperties>
         <configValues>
             <entry>
-                <key>Proximity Bias</key>
-                <value>6</value>
-            </entry>
-            <entry>
-                <key>Importance Version</key>
-                <value>2</value>
-            </entry>
-            <entry>
-                <key>WLL</key>
-                <value>-0.1</value>
-            </entry>
-            <entry>
-                <key>WindowColor</key>
-                <value>#F9F9F9</value>
-            </entry>
-            <entry>
-                <key>Use Help2 Request</key>
-                <value>No</value>
-            </entry>
-            <entry>
-                <key>Use Initial Optimum Assignment</key>
-                <value>Yes</value>
-            </entry>
-            <entry>
-                <key>Agent Type</key>
-                <value>Advanced Action MAP</value>
-            </entry>
-            <entry>
-                <key>Lowcost Threshold</key>
-                <value>50</value>
-            </entry>
-            <entry>
                 <key>Team Name</key>
                 <value>Advanced Action MAP</value>
             </entry>
             <entry>
                 <key>Request Threshold</key>
                 <value>351</value>
+            </entry>
+            <entry>
+                <key>WLL</key>
+                <value>-0.1</value>
+            </entry>
+            <entry>
+                <key>Use Help2 Request</key>
+                <value>No</value>
+            </entry>
+            <entry>
+                <key>Agent Type</key>
+                <value>Advanced Action MAP</value>
+            </entry>
+            <entry>
+                <key>Proximity Bias</key>
+                <value>6</value>
+            </entry>
+            <entry>
+                <key>Lowcost Threshold</key>
+                <value>50</value>
+            </entry>
+            <entry>
+                <key>Use Initial Optimum Assignment</key>
+                <value>Yes</value>
+            </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#F9F9F9</value>
+            </entry>
+            <entry>
+                <key>Importance Version</key>
+                <value>2</value>
             </entry>
         </configValues>
         <teamType>AdvActionMAP</teamType>
@@ -581,48 +581,28 @@
         </configProperties>
         <configValues>
             <entry>
-                <key>WLL</key>
-                <value>-0.1</value>
-            </entry>
-            <entry>
-                <key>Importance Version</key>
-                <value>2</value>
-            </entry>
-            <entry>
                 <key>Swap Bid Threshold</key>
                 <value>50</value>
             </entry>
             <entry>
-                <key>Agent Type</key>
+                <key>Team Name</key>
                 <value>Advanced Action MAP Replaning</value>
             </entry>
             <entry>
-                <key>Swap Resource Threshold</key>
-                <value>100</value>
-            </entry>
-            <entry>
-                <key>Request Threshold</key>
-                <value>351</value>
-            </entry>
-            <entry>
-                <key>Swap Deliberation Threshold</key>
-                <value>0</value>
+                <key>Use Help2 Request</key>
+                <value>No</value>
             </entry>
             <entry>
                 <key>Proximity Bias</key>
                 <value>6</value>
             </entry>
             <entry>
-                <key>WindowColor</key>
-                <value>#F9D9D9</value>
-            </entry>
-            <entry>
                 <key>Use Initial Optimum Assignment</key>
                 <value>Yes</value>
             </entry>
             <entry>
-                <key>Use Help2 Request</key>
-                <value>No</value>
+                <key>WindowColor</key>
+                <value>#F9D9D9</value>
             </entry>
             <entry>
                 <key>WREP</key>
@@ -633,16 +613,36 @@
                 <value>150</value>
             </entry>
             <entry>
+                <key>Request Threshold</key>
+                <value>351</value>
+            </entry>
+            <entry>
+                <key>WLL</key>
+                <value>-0.1</value>
+            </entry>
+            <entry>
                 <key>Use Swap</key>
                 <value>No</value>
+            </entry>
+            <entry>
+                <key>Agent Type</key>
+                <value>Advanced Action MAP Replaning</value>
             </entry>
             <entry>
                 <key>Lowcost Threshold</key>
                 <value>50</value>
             </entry>
             <entry>
-                <key>Team Name</key>
-                <value>Advanced Action MAP Replaning</value>
+                <key>Swap Resource Threshold</key>
+                <value>100</value>
+            </entry>
+            <entry>
+                <key>Importance Version</key>
+                <value>2</value>
+            </entry>
+            <entry>
+                <key>Swap Deliberation Threshold</key>
+                <value>0</value>
             </entry>
         </configValues>
         <teamType>AdvActionMAPRep</teamType>
@@ -693,24 +693,24 @@
         </configProperties>
         <configValues>
             <entry>
-                <key>WindowColor</key>
-                <value>#E9F9E9</value>
-            </entry>
-            <entry>
-                <key>Use Initial Optimum Assignment</key>
-                <value>Yes</value>
-            </entry>
-            <entry>
-                <key>Agent Type</key>
-                <value>Basic Action MAP</value>
-            </entry>
-            <entry>
                 <key>Team Name</key>
                 <value>Basic Action MAP</value>
             </entry>
             <entry>
                 <key>Request Threshold</key>
                 <value>351</value>
+            </entry>
+            <entry>
+                <key>Agent Type</key>
+                <value>Basic Action MAP</value>
+            </entry>
+            <entry>
+                <key>Use Initial Optimum Assignment</key>
+                <value>Yes</value>
+            </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#E9F9E9</value>
             </entry>
         </configValues>
         <teamType>BasicActionMAP</teamType>
@@ -805,36 +805,36 @@
         </configProperties>
         <configValues>
             <entry>
-                <key>Proximity Bias</key>
-                <value>6</value>
-            </entry>
-            <entry>
-                <key>Importance Version</key>
-                <value>2</value>
-            </entry>
-            <entry>
-                <key>WHH</key>
-                <value>0.5</value>
-            </entry>
-            <entry>
-                <key>WindowColor</key>
-                <value>#F9E9E9</value>
-            </entry>
-            <entry>
-                <key>Use Initial Optimum Assignment</key>
-                <value>Yes</value>
-            </entry>
-            <entry>
-                <key>Agent Type</key>
-                <value>HIAMAP</value>
-            </entry>
-            <entry>
                 <key>Team Name</key>
                 <value>Helper Initiated Action MAP</value>
             </entry>
             <entry>
                 <key>Request Threshold</key>
                 <value>351</value>
+            </entry>
+            <entry>
+                <key>WHH</key>
+                <value>0.5</value>
+            </entry>
+            <entry>
+                <key>Agent Type</key>
+                <value>HIAMAP</value>
+            </entry>
+            <entry>
+                <key>Proximity Bias</key>
+                <value>6</value>
+            </entry>
+            <entry>
+                <key>Use Initial Optimum Assignment</key>
+                <value>Yes</value>
+            </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#F9E9E9</value>
+            </entry>
+            <entry>
+                <key>Importance Version</key>
+                <value>2</value>
             </entry>
         </configValues>
         <teamType>HIAMAP</teamType>
@@ -877,20 +877,20 @@
         </configProperties>
         <configValues>
             <entry>
-                <key>WindowColor</key>
-                <value>#E9E9F9</value>
-            </entry>
-            <entry>
-                <key>Use Initial Optimum Assignment</key>
-                <value>Yes</value>
+                <key>Team Name</key>
+                <value>No Help</value>
             </entry>
             <entry>
                 <key>Agent Type</key>
                 <value>No Help</value>
             </entry>
             <entry>
-                <key>Team Name</key>
-                <value>No Help</value>
+                <key>Use Initial Optimum Assignment</key>
+                <value>Yes</value>
+            </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#E9E9F9</value>
             </entry>
         </configValues>
         <teamType>NoHelp</teamType>
@@ -992,31 +992,15 @@
         </configProperties>
         <configValues>
             <entry>
-                <key>Swap Deliberation Threshold</key>
-                <value>0</value>
+                <key>Swap Request Threshold</key>
+                <value>150</value>
             </entry>
             <entry>
                 <key>Swap Bid Threshold</key>
                 <value>50</value>
             </entry>
             <entry>
-                <key>WindowColor</key>
-                <value>#E9E9F9</value>
-            </entry>
-            <entry>
-                <key>Use Initial Optimum Assignment</key>
-                <value>Yes</value>
-            </entry>
-            <entry>
-                <key>Swap Request Threshold</key>
-                <value>150</value>
-            </entry>
-            <entry>
-                <key>WREP</key>
-                <value>-0.3</value>
-            </entry>
-            <entry>
-                <key>Agent Type</key>
+                <key>Team Name</key>
                 <value>No Help Replaning</value>
             </entry>
             <entry>
@@ -1024,14 +1008,214 @@
                 <value>No</value>
             </entry>
             <entry>
-                <key>Team Name</key>
+                <key>Agent Type</key>
                 <value>No Help Replaning</value>
+            </entry>
+            <entry>
+                <key>Use Initial Optimum Assignment</key>
+                <value>Yes</value>
             </entry>
             <entry>
                 <key>Swap Resource Threshold</key>
                 <value>100</value>
             </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#E9E9F9</value>
+            </entry>
+            <entry>
+                <key>WREP</key>
+                <value>-0.3</value>
+            </entry>
+            <entry>
+                <key>Swap Deliberation Threshold</key>
+                <value>0</value>
+            </entry>
         </configValues>
         <teamType>NoHelpRep</teamType>
+    </teams>
+    <teams>
+        <configProperties>
+            <dataItems></dataItems>
+            <dataType>Text</dataType>
+            <description>Type of agent and team.</description>
+            <inputType>FixedChoices</inputType>
+            <name>Agent Type</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Text</dataType>
+            <description>Name of the team for simulation.</description>
+            <inputType>FreeText</inputType>
+            <name>Team Name</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Decimal</dataType>
+            <description>Request help in case cost is greater than Request Threshold.</description>
+            <inputType>FreeText</inputType>
+            <name>Request Threshold</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Decimal</dataType>
+            <description>Request help in case cost is lower than Lowcost threshold</description>
+            <inputType>FreeText</inputType>
+            <name>Lowcost Threshold</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Decimal</dataType>
+            <description></description>
+            <inputType>FreeText</inputType>
+            <name>Cost to goal Threshold</name>
+            <range>true</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataItems>Yes</dataItems>
+            <dataItems>No</dataItems>
+            <dataType>Text</dataType>
+            <description>Whether an agent will sacrifice itself or not.</description>
+            <inputType>FixedChoices</inputType>
+            <name>Can Sacrifice</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Text</dataType>
+            <description></description>
+            <inputType>FreeText</inputType>
+            <name>WindowColor</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configValues>
+            <entry>
+                <key>Team Name</key>
+                <value>Resource MAP</value>
+            </entry>
+            <entry>
+                <key>Request Threshold</key>
+                <value>351</value>
+            </entry>
+            <entry>
+                <key>Cost to goal Threshold</key>
+                <value>1.1</value>
+            </entry>
+            <entry>
+                <key>Can Sacrifice</key>
+                <value>No</value>
+            </entry>
+            <entry>
+                <key>Agent Type</key>
+                <value>Resource MAP</value>
+            </entry>
+            <entry>
+                <key>Lowcost Threshold</key>
+                <value>50</value>
+            </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#F9F9F9</value>
+            </entry>
+        </configValues>
+        <teamType>ResourceMAP</teamType>
+    </teams>
+    <teams>
+        <configProperties>
+            <dataItems></dataItems>
+            <dataType>Text</dataType>
+            <description>Type of agent and team.</description>
+            <inputType>FixedChoices</inputType>
+            <name>Agent Type</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Text</dataType>
+            <description>Name of the team for simulation.</description>
+            <inputType>FreeText</inputType>
+            <name>Team Name</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Decimal</dataType>
+            <description>Request help in case cost is greater than Request Threshold.</description>
+            <inputType>FreeText</inputType>
+            <name>Request Threshold</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Decimal</dataType>
+            <description>Request help in case cost is lower than Lowcost threshold</description>
+            <inputType>FreeText</inputType>
+            <name>Lowcost Threshold</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Decimal</dataType>
+            <description></description>
+            <inputType>FreeText</inputType>
+            <name>Cost to goal Threshold</name>
+            <range>true</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataItems>Yes</dataItems>
+            <dataItems>No</dataItems>
+            <dataType>Text</dataType>
+            <description>Whether an agent will sacrifice itself or not.</description>
+            <inputType>FixedChoices</inputType>
+            <name>Can Sacrifice</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configProperties>
+            <dataType>Text</dataType>
+            <description></description>
+            <inputType>FreeText</inputType>
+            <name>WindowColor</name>
+            <range>false</range>
+            <valueType>Single</valueType>
+        </configProperties>
+        <configValues>
+            <entry>
+                <key>Team Name</key>
+                <value>Resource MAP Replanning</value>
+            </entry>
+            <entry>
+                <key>Request Threshold</key>
+                <value>351</value>
+            </entry>
+            <entry>
+                <key>Cost to goal Threshold</key>
+                <value>1.1</value>
+            </entry>
+            <entry>
+                <key>Can Sacrifice</key>
+                <value>No</value>
+            </entry>
+            <entry>
+                <key>Agent Type</key>
+                <value>Resource MAP Replanning</value>
+            </entry>
+            <entry>
+                <key>Lowcost Threshold</key>
+                <value>50</value>
+            </entry>
+            <entry>
+                <key>WindowColor</key>
+                <value>#F9F9F9</value>
+            </entry>
+        </configValues>
+        <teamType>ResourceMAPRep</teamType>
     </teams>
 </experimentConfiguration>

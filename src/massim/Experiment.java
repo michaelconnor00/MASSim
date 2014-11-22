@@ -19,6 +19,7 @@ import massim.agents.helperinitactionmap.HelperInitActionMAPTeam;
 import massim.agents.nohelp.NoHelpRepAgent;
 import massim.agents.nohelp.NoHelpRepTeam;
 import massim.agents.nohelp.NoHelpTeam;
+import massim.agents.resourcemap.*;
 import massim.ui.config.Configuration;
 import massim.ui.config.ExperimentConfiguration;
 import massim.ui.config.TeamConfiguration;
@@ -245,6 +246,16 @@ public class Experiment {
 						getTeams()[iIndex].setLogger(logger, iIndex);
 						validateNoHelpParams(teamConfig, iIndex + 1,  1);
 						break;
+					case ResourceMAP:
+						getTeams()[iIndex] = new ResourceMAPTeam();
+						getTeams()[iIndex].setLogger(logger, iIndex);
+						validateResourceMapParams(teamConfig, iIndex + 1, 0);
+						break;
+					case ResourceMAPRep:
+						getTeams()[iIndex] = new ResourceMAPRepTeam();
+						getTeams()[iIndex].setLogger(logger, iIndex);
+						validateResourceMapParams(teamConfig, iIndex + 1,  1);
+						break;
 					default:
 						strErrorMessage += "Invalid team type " + teamConfig.getTeamType() + "\n";
 						break;
@@ -357,6 +368,13 @@ public class Experiment {
 			else if(range.getProperty().equalsIgnoreCase("HIAMAP-Proximity Bias")) {
 				HelperInitActionMAPAgent.impFactor = (int)Math.floor(range.getCurrentValue());
 			}
+			else if(range.getProperty().equalsIgnoreCase("RESMAPREP-CTGT")) {
+				ResourceMAPRepAgent.costToGoalHelpThreshold = range.getCurrentValue();
+			}
+			else if(range.getProperty().equalsIgnoreCase("RESMAP-CTGT")) {
+				ResourceMAPAgent.costToGoalHelpThreshold = range.getCurrentValue();
+			}
+
 			//System.out.println(range.toString());
 		}
 		//System.out.println("------------------------------------------------------------");
@@ -592,6 +610,37 @@ public class Experiment {
 				}
 			} else {
 				team.setUseSwap(false);
+			}
+		}
+	}
+
+	private void validateResourceMapParams(TeamConfiguration teamConfig, int index, int childType)
+	{
+		String suffix = "for ResourceMap [Team - " + index + "].\n";
+		if(childType == 1)
+			suffix = "for ResourceMapReplaning [Team - " + index + "].\n";
+
+		//Cost to goal Threshold
+		Double[] costToGTh = validateRangeValue(teamConfig, "Cost to goal Threshold");
+		if(costToGTh.length == 1) {
+			if(childType == 1)
+				ResourceMAPRepAgent.costToGoalHelpThreshold = costToGTh[0];
+			else
+				ResourceMAPAgent.costToGoalHelpThreshold = costToGTh[0];
+		}
+		else if(costToGTh.length == 3) {
+			if(childType == 1)
+				lstSimRange.add(new SimulationRange("RESMAPREP-CTGT", costToGTh[0], costToGTh[1], costToGTh[2]));
+			else
+				lstSimRange.add(new SimulationRange("RESMAP-CTGT", costToGTh[0], costToGTh[1], costToGTh[2]));
+		}
+
+		//Can sacrifice
+		if(teamConfig.getPropertyValue("Can Sacrifice") != null) {
+			if(childType == 1) {
+				ResourceMAPRepAgent.canSacrifice = teamConfig.getPropertyValue("Can Sacrifice").equalsIgnoreCase("Yes");
+			} else {
+				ResourceMAPAgent.canSacrifice = teamConfig.getPropertyValue("Can Sacrifice").equalsIgnoreCase("Yes");
 			}
 		}
 	}

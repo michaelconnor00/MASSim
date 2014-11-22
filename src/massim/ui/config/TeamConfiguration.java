@@ -42,6 +42,7 @@ public class TeamConfiguration extends Configuration {
 		NoHelp("No Help"),
 		NoHelpRep("No Help Replaning"),
 		ResourceMAP("Resource MAP"),
+		ResourceMAPRep("Resource MAP Replanning"),
 		New("New Team");
 		
 		private String fName;

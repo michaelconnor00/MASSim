@@ -436,14 +436,16 @@ public class ResourceMAP_TBAgent extends Agent {
 
 						logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
 								", NTB= "+netTeamBenefit);
-
-						if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
-							//if (reqWellbeing > wellbeing()){} TODO consider different behaviour if their wellbeing is greater.
-							bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
-							bidding = true;
-
+						if (canSend()) {
+							if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
+								bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+								bidding = true;
+							} else if (netTeamBenefit > 0 && reqWellbeing > wellbeing()) {
+								//Bid all the assistance you have available
+								bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+								bidding = true;
+							}
 						}
-
 					}
 
 				}

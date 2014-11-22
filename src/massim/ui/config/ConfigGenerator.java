@@ -27,7 +27,7 @@ import org.w3c.dom.Document;
 public class ConfigGenerator {
 	public static void main(String[] args)
 	{
-		//run();
+		run();
 		//runValues();
 	}
 	private static void run()
@@ -376,6 +376,40 @@ public class ConfigGenerator {
 			teamConfig.add("Swap Bid Threshold", "50");
 			teamConfig.add("Swap Deliberation Threshold", "0");
 			teamConfig.add("WindowColor", "#E9E9F9");
+			config.add(teamConfig);
+
+			teamConfig = new TeamConfiguration(TeamType.ResourceMAP);
+			teamConfig.add(new ConfigProperty("Agent Type", ValueType.Single, DataType.Text, InputType.FixedChoices, strValues1, false, null, null, "Type of agent and team."));
+			teamConfig.add(new ConfigProperty("Team Name", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, "Name of the team for simulation."));
+			teamConfig.add(new ConfigProperty("Request Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, false, null, null, "Request help in case cost is greater than Request Threshold."));
+			teamConfig.add(new ConfigProperty("Lowcost Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, false, null, null, "Request help in case cost is lower than Lowcost threshold"));
+			teamConfig.add(new ConfigProperty("Cost to goal Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, true, null, null, ""));
+			teamConfig.add(new ConfigProperty("Can Sacrifice", ValueType.Single, DataType.Text, InputType.FixedChoices, new String[] {"Yes", "No"}, false, null, null, "Whether an agent will sacrifice itself or not."));
+			teamConfig.add(new ConfigProperty("WindowColor", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, ""));
+			teamConfig.add("Agent Type", "Resource MAP");
+			teamConfig.add("Team Name", "Resource MAP");
+			teamConfig.add("Request Threshold", "351");
+			teamConfig.add("Lowcost Threshold", "50");
+			teamConfig.add("Cost to goal Threshold", "1.1");
+			teamConfig.add("Can Sacrifice", "No");
+			teamConfig.add("WindowColor", "#F9F9F9");
+			config.add(teamConfig);
+
+			teamConfig = new TeamConfiguration(TeamType.ResourceMAPRep);
+			teamConfig.add(new ConfigProperty("Agent Type", ValueType.Single, DataType.Text, InputType.FixedChoices, strValues1, false, null, null, "Type of agent and team."));
+			teamConfig.add(new ConfigProperty("Team Name", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, "Name of the team for simulation."));
+			teamConfig.add(new ConfigProperty("Request Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, false, null, null, "Request help in case cost is greater than Request Threshold."));
+			teamConfig.add(new ConfigProperty("Lowcost Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, false, null, null, "Request help in case cost is lower than Lowcost threshold"));
+			teamConfig.add(new ConfigProperty("Cost to goal Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, true, null, null, ""));
+			teamConfig.add(new ConfigProperty("Can Sacrifice", ValueType.Single, DataType.Text, InputType.FixedChoices, new String[] {"Yes", "No"}, false, null, null, "Whether an agent will sacrifice itself or not."));
+			teamConfig.add(new ConfigProperty("WindowColor", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, ""));
+			teamConfig.add("Agent Type", "Resource MAP Replanning");
+			teamConfig.add("Team Name", "Resource MAP Replanning");
+			teamConfig.add("Request Threshold", "351");
+			teamConfig.add("Lowcost Threshold", "50");
+			teamConfig.add("Cost to goal Threshold", "1.1");
+			teamConfig.add("Can Sacrifice", "No");
+			teamConfig.add("WindowColor", "#F9F9F9");
 			config.add(teamConfig);
 		} catch (Exception e) {
 			e.printStackTrace();
