@@ -394,13 +394,15 @@ public class ResourceMAP_TBAgent extends Agent {
 					// Sort help request messages from cheapest cost to goal to most expensive
 					Collections.sort(helpReqMsgs, estimatedCostToGoalOrder);
 
-					// Bidding for helping achieve goal
+					// Check to see if any of the requester can get to the goal for less than self.
 					for (int i = 0; (i < helpReqMsgs.size()) && canSacrifice && !bidding; i++) {
 						Double reqECostToGoal = helpReqMsgs.get(i).getDoubleValue("eCostToGoal");
 						int requesterAgent = helpReqMsgs.get(i).sender();
 
+						//check that the myCostToGoal:requesterCostToGoal ratio is greater than threshold
+						// and I have enough resources to sacrifice.
 						if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
-								(resourcePoints - Team.unicastCost - TeamTask.helpOverhead) >= reqECostToGoal) {
+								(resourcePoints - Team.unicastCost - TeamTask.helpOverhead) >= reqECostToGoal) { //TODO why: TeamTask.helpOverhead,
 							bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), wellbeing()));
 							helpReqMsgs.remove(helpReqMsgs.get(i));
 							bidding = true;
@@ -410,27 +412,36 @@ public class ResourceMAP_TBAgent extends Agent {
 
 					int myMaxAssistance = resourcePoints - (int) estimatedCost(remainingPath(pos())) - TeamTask.helpOverhead;
 
-					// Sort by average step cost to goal, in ascending order.
-					Collections.sort(helpReqMsgs, averageStepCostOrder);
+					// Sort DESC by teamBenefit, most to least.
+					Collections.sort(helpReqMsgs, tbOrder);
+					int stepTeamBenefit = 0;
+					int reqNextStepCost = 0;
+					double reqWellbeing = 0.0;
 
 					// Bidding for helping achieve next cell
-					for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) {
-						int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
-						double reqAvgStepCostToGoal = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
-						int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost");
+					for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) { //TODO Only allowing one bid per round.
+						stepTeamBenefit = helpReqMsgs.get(i).getIntValue("teamBenefit");
+						reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead + Team.unicastCost; //TODO add unicast cost here?
+						reqWellbeing = helpReqMsgs.get(i).getDoubleValue("wellbeing");
 						int requesterAgent = helpReqMsgs.get(i).sender();
 
-						// Helper has enough resources to reach their own goal
-						if ((estimatedCost(remainingPath(pos())) <= resourcePoints - TeamTask.helpOverhead) &&
-								myMaxAssistance > reqNextStepCost) {
-							bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
-							bidding = true;
+						int teamLoss = -1;
+						int netTeamBenefit = -1;
+
+						if (canCalc())
+						{
+							teamLoss = calcTeamLoss(reqNextStepCost);
+							netTeamBenefit = stepTeamBenefit - teamLoss;
 						}
-						// Helper does not have enough resource points to get to their goal
-						// My average step costs from current position to the goal is greater than the help requester's.
-						else if ((remainingPath(pos()).getNumPoints() / estimatedCost(remainingPath(pos()))) > reqAvgStepCostToGoal) {
+
+						logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
+								", NTB= "+netTeamBenefit);
+
+						if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
+							//if (reqWellbeing > wellbeing()){} TODO consider different behaviour if their wellbeing is greater.
 							bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
 							bidding = true;
+
 						}
 
 					}
@@ -500,7 +511,8 @@ public class ResourceMAP_TBAgent extends Agent {
 					for (Message bid : receivedBidMsgs)
 					{
 						//Check If agent has sacrificed own resources to self to reach goal
-						if (bid.getIntValue("resourceAmount") >= estimatedCost(remainingPath(pos()))){
+						if (bid.getIntValue("resourceAmount") >= estimatedCost(remainingPath(pos())) && canSend()){
+							resourcePoints -= Team.unicastCost;
 							buffer = 0;
 							resourcePoints += bid.getIntValue("resourceAmount");
 							//Use all the sacrificed resources.
@@ -515,23 +527,30 @@ public class ResourceMAP_TBAgent extends Agent {
 						int bidAmount = receivedBidMsgs.get(i).getIntValue("resourceAmount");
 						int helperID = receivedBidMsgs.get(i).sender();
 
-						if (bidAmount == buffer){  //Only one bid required
+						if (bidAmount == buffer && canSend()){  //Only one bid required
 							buffer = 0;
+							resourcePoints -= Team.unicastCost;
 							resourcePoints += bidAmount;
 							//Use the whole bid
 							confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
 						}
-						else if (bidAmount < buffer){ //require multiple bids
+						else if (bidAmount < buffer && canSend()){ //require multiple bids
 							buffer -= bidAmount;
+							resourcePoints -= Team.unicastCost;
 							resourcePoints += bidAmount;
 							//Use the whole bid
 							confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
 						}
-						else{  //bidAmount > buffer
+						else if (bidAmount > buffer && canSend()){
+							resourcePoints -= Team.unicastCost;
 							resourcePoints += buffer;
 							//Use part of the bid, return un-used amount
 							confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID));
 							buffer = 0; //Or break;
+						}
+						else{
+							setState(ResMAPState.S_BLOCKED);
+							logInf("Now I'm blocked!");
 						}
 					}
 
@@ -1005,15 +1024,7 @@ public class ResourceMAP_TBAgent extends Agent {
 
 		int noHelpRewards = projectRewardPoints(resourcePoints(),pos());
 
-		int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints()- resourcesToSend, pos()) - 1;
-
-		int noHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(), pos()) - 1;
-
-		return
-			(noHelpRewards - withHelpRewards) *
-			(1 + (importance(noHelpRemPathLength)-importance(withHelpRemPathLength)) *
-			(withHelpRemPathLength-noHelpRemPathLength)) + TeamTask.helpOverhead;
-
+		return (noHelpRewards - withHelpRewards);
 	}
 
 	/**
@@ -1030,10 +1041,6 @@ public class ResourceMAP_TBAgent extends Agent {
 		//Calc PATH rewards with no help
 		int noHelpRewards = projectRewardPoints(resourcePoints(), pos());
 
-		//int withHelpRemPathLength = path().getNumPoints() - findFinalPos(resourcePoints(),skipCell) - 1 ;
-		//int noHelpRemPathLength = path().getNumPoints() -  findFinalPos(resourcePoints(),pos()) - 1;
-		//return (withHelpRewards-noHelpRewards) * (1+ (importance(withHelpRemPathLength)-importance(noHelpRemPathLength)) *
-			//(noHelpRemPathLength-withHelpRemPathLength));
 
 		return (withHelpRewards - noHelpRewards);
 	}

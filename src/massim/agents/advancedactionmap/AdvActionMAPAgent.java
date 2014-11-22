@@ -893,11 +893,9 @@ public class AdvActionMAPAgent extends Agent {
 	private int calcTeamLoss(int helpActCost) {
 		
 		decResourcePoints(Agent.calculationCost);
-		int withHelpRewards = 
-			projectRewardPoints(resourcePoints()-helpActCost, pos());
+		int withHelpRewards = projectRewardPoints(resourcePoints()-helpActCost, pos());
 						
-		int noHelpRewards =
-			projectRewardPoints(resourcePoints(),pos());
+		int noHelpRewards = projectRewardPoints(resourcePoints(),pos());
 						
 		int withHelpRemPathLength = 
 			path().getNumPoints() - 
