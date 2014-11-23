@@ -43,6 +43,8 @@ public class TeamConfiguration extends Configuration {
 		NoHelpRep("No Help Replaning"),
 		ResourceMAP("Resource MAP"),
 		ResourceMAPRep("Resource MAP Replanning"),
+		ResourceMAP_TB("Resource MAP TeamBenefit"),
+		ResourceMAP_TBRep("Resource MAP TeamBeneift Re-Plan"),
 		New("New Team");
 		
 		private String fName;

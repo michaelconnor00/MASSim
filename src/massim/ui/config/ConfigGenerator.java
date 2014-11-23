@@ -386,12 +386,14 @@ public class ConfigGenerator {
 			teamConfig.add(new ConfigProperty("Cost to goal Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, true, null, null, ""));
 			teamConfig.add(new ConfigProperty("Can Sacrifice", ValueType.Single, DataType.Text, InputType.FixedChoices, new String[] {"Yes", "No"}, false, null, null, "Whether an agent will sacrifice itself or not."));
 			teamConfig.add(new ConfigProperty("WindowColor", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, ""));
+			teamConfig.add(new ConfigProperty("WLL", ValueType.Single, DataType.Decimal, InputType.OptionalDropDown, strValues, true, strValues, strValues, "Low watermark value to compare wellbeing for requesting help."));
 			teamConfig.add("Agent Type", "Resource MAP");
 			teamConfig.add("Team Name", "Resource MAP");
 			teamConfig.add("Request Threshold", "351");
 			teamConfig.add("Lowcost Threshold", "50");
 			teamConfig.add("Cost to goal Threshold", "1.1");
 			teamConfig.add("Can Sacrifice", "No");
+			teamConfig.add("WLL", "-0.1");
 			teamConfig.add("WindowColor", "#F9F9F9");
 			config.add(teamConfig);
 
@@ -403,12 +405,14 @@ public class ConfigGenerator {
 			teamConfig.add(new ConfigProperty("Cost to goal Threshold", ValueType.Single, DataType.Decimal, InputType.FreeText, null, true, null, null, ""));
 			teamConfig.add(new ConfigProperty("Can Sacrifice", ValueType.Single, DataType.Text, InputType.FixedChoices, new String[] {"Yes", "No"}, false, null, null, "Whether an agent will sacrifice itself or not."));
 			teamConfig.add(new ConfigProperty("WindowColor", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, ""));
+			teamConfig.add(new ConfigProperty("WLL", ValueType.Single, DataType.Decimal, InputType.OptionalDropDown, strValues, true, strValues, strValues, "Low watermark value to compare wellbeing for requesting help."));
 			teamConfig.add("Agent Type", "Resource MAP Replanning");
 			teamConfig.add("Team Name", "Resource MAP Replanning");
 			teamConfig.add("Request Threshold", "351");
 			teamConfig.add("Lowcost Threshold", "50");
 			teamConfig.add("Cost to goal Threshold", "1.1");
 			teamConfig.add("Can Sacrifice", "No");
+			teamConfig.add("WLL", "-0.1");
 			teamConfig.add("WindowColor", "#F9F9F9");
 			config.add(teamConfig);
 		} catch (Exception e) {

@@ -25,9 +25,9 @@ public class ResourceMAP_TBAgent extends Agent {
 	// Adjustable Parameters:
 
 	// Request and cost thresholds
-	public static double requestThreshold;
-	public static double lowCostThreshold;
-	public static double EPSILON;
+//	public static double requestThreshold;
+//	public static double lowCostThreshold;
+//	public static double EPSILON;
 	//public static boolean useTeamWellbeing = false; //TODO not implemented see AdvActionMAPAgent
 
 	// Resource MAP toggles
@@ -254,7 +254,7 @@ public class ResourceMAP_TBAgent extends Agent {
 
 						if (canCalc()) {
 
-							int helpAmount = cost - (resourcePoints() - Team.broadcastCost - Agent.calculationCost); //TODO Devin check formula
+							int helpAmount = cost - (resourcePoints() - Team.broadcastCost - Agent.calculationCost);
 
 							int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
@@ -419,9 +419,9 @@ public class ResourceMAP_TBAgent extends Agent {
 					double reqWellbeing = 0.0;
 
 					// Bidding for helping achieve next cell
-					for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) { //TODO Only allowing one bid per round.
+					for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) {
 						stepTeamBenefit = helpReqMsgs.get(i).getIntValue("teamBenefit");
-						reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead + Team.unicastCost; //TODO add unicast cost here?
+						reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead ;
 						reqWellbeing = helpReqMsgs.get(i).getDoubleValue("wellbeing");
 						int requesterAgent = helpReqMsgs.get(i).sender();
 
@@ -695,13 +695,8 @@ public class ResourceMAP_TBAgent extends Agent {
 	 * @return
 	 */
 	private boolean checkNeedHelp(int cost, double wellbeing) {
-
 		if (wellbeing < WLL) logInf2("Wellbeing = " + wellbeing);
-		if ((wellbeing < WLL && cost > ResourceMAP_TBAgent.lowCostThreshold)) logInf2("Trig!");
-		//TODO: logic for team wellbeing
-		return (cost > resourcePoints()) ||
-				(wellbeing < WLL && cost > ResourceMAP_TBAgent.lowCostThreshold) ||
-				(cost > ResourceMAP_TBAgent.requestThreshold);
+		return (cost > resourcePoints());
 	}
 
 	/**

@@ -25,13 +25,10 @@ public class ResourceMAPAgent extends Agent {
 	// Adjustable Parameters:
 
 	// Request and cost thresholds
-	//public static double requestThreshold;
-	//public static double lowCostThreshold;
-	//public static double EPSILON;
+	// None
 
 	// Resource MAP toggles
 	public static boolean canSacrifice = true;
-	//public static boolean multipleBids;  // Maybe implement this in the future
 	public static double costToGoalHelpThreshold = 1.1;
 
 
@@ -413,7 +410,7 @@ public class ResourceMAPAgent extends Agent {
 					Collections.sort(helpReqMsgs, averageStepCostOrder);
 
 					// Bidding for helping achieve next cell
-					for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) { //TODO Only allowing one bid per round.
+					for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) {
 						int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
 						double reqAvgStepCostToGoal = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
 						int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost");
@@ -427,8 +424,6 @@ public class ResourceMAPAgent extends Agent {
 						}
 						// Helper does not have enough resource points to get to their goal
 						// My average step costs from current position to the goal is greater than the help requester's.
-//						else if ((remainingPath(pos()).getNumPoints() / estimatedCost(remainingPath(pos()))) > reqAvgStepCostToGoal) {
-						//TODO confirm above is (steps/cost) where we need (cost/step).
 						else if ((estimatedCost(remainingPath(pos())) / remainingPath(pos()).getNumPoints()) > reqAvgStepCostToGoal) {
 							bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
 							bidding = true;
@@ -494,13 +489,13 @@ public class ResourceMAPAgent extends Agent {
 					logInf("Received " + receivedBidMsgs.size()+" bids.");
 
 					//Buffer of Cost for next step, for use when using multiple bids
-					int buffer = getCellCost(path().getNextPoint(pos()));
+					int buffer = getCellCost(path().getNextPoint(pos())) + Team.unicastCost;
 
 					Collections.sort(receivedBidMsgs, wellbeingOrder);
 					for (Message bid : receivedBidMsgs)
 					{
 						//Check If agent has sacrificed own resources to self to reach goal
-						if (bid.getIntValue("resourceAmount") == estimatedCost(remainingPath(pos())) && canSend()){ // MC added canSend() Nov 22/14
+						if (bid.getIntValue("resourceAmount") == estimatedCost(remainingPath(pos()))){
 							buffer = 0;
 							resourcePoints += bid.getIntValue("resourceAmount");
 							//Use all the sacrificed resources.
@@ -513,27 +508,23 @@ public class ResourceMAPAgent extends Agent {
 						int bidAmount = receivedBidMsgs.get(i).getIntValue("resourceAmount");
 						int helperID = receivedBidMsgs.get(i).sender();
 
-						if (bidAmount == buffer && canSend()){ //MC added canSend() Nov 22/14
+						if (bidAmount == buffer){
 							buffer = 0;
 							resourcePoints += bidAmount;
 							//Use the whole bid
-							confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
+							confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID)); //TODO remove helpOverhead
 						}
-						else if (bidAmount < buffer && canSend()){ //MC added canSend() Nov 22/14
+						else if (bidAmount < buffer){
 							buffer -= bidAmount;
 							resourcePoints += bidAmount;
 							//Use the whole bid
-							confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
+							confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID)); //TODO remove helpOverhead
 						}
-						else if (bidAmount > buffer && canSend()) { //MC added canSend() Nov 22/14
+						else if (bidAmount > buffer) {
 							resourcePoints += buffer;
 							//Use part of the bid, return un-used amount
-							confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID));
+							confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID)); //TODO remove helpOverhead
 							buffer = 0; //Or break;
-						}
-						else{ //MC added Nov 22/14
-							setState(ResMAPState.S_BLOCKED);
-							logInf("Now I'm blocked!");
 						}
 					}
 
@@ -749,6 +740,8 @@ public class ResourceMAPAgent extends Agent {
 	 */
 	private double estimatedCost(Path p) {
 
+		decResourcePoints(Agent.calculationCost);
+
 		int l = p.getNumPoints();
 		double sigma = 1 - disturbanceLevel;
 		double eCost = 0.0;
@@ -889,23 +882,23 @@ public class ResourceMAPAgent extends Agent {
 		return calcRewardPoints(remainingResourcePoints, iCell);
 	}
 
-	/**
-	 * The importance function.
-	 *
-	 * Maps the remaining distance to the goal into
-	 *
-	 * Currently: imp(x) = 100/x
-	 *
-	 * @param remainingLength
-	 * @return
-	 */
-	private int importance(int remainingLength) {
-		remainingLength ++; /* TODO: double check */
-		if (remainingLength != 0)
-			return 100/remainingLength;
-		else
-			return 0;
-	}
+//	/**
+//	 * The importance function.
+//	 *
+//	 * Maps the remaining distance to the goal into
+//	 *
+//	 * Currently: imp(x) = 100/x
+//	 *
+//	 * @param remainingLength
+//	 * @return
+//	 */
+//	private int importance(int remainingLength) {
+//		remainingLength ++; /* TODO: double check */
+//		if (remainingLength != 0)
+//			return 100/remainingLength;
+//		else
+//			return 0;
+//	}
 
 	/**
 	 * Prepares a help request message and returns its String encoding.
