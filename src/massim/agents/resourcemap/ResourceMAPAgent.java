@@ -81,43 +81,6 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 		}
 	}
 
-	public void method_S_RESPOND_TO_REQ(){
-		if(bidding && canSend())
-		{
-			for (Message msg : bidMsgs){
-				logInf("Sending a bid to agent" + msg.getIntValue("requester"));
-				sendMsg(msg.getIntValue("requester"), msg.toString());
-				this.numOfBids++;
-			}
-
-			setState(ResMAPState.R_BIDDING);
-		}
-
-		else
-		{
-			int cost = getCellCost(path().getNextPoint(pos()));
-			if (cost <= resourcePoints())
-				setState(ResMAPState.R_DO_OWN_ACT);
-			else
-				setState(ResMAPState.R_BLOCKED);
-		}
-	}
-
-	public void method_S_RESPOND_BIDS(){
-		if (canSend())
-		{
-			logInf("Confirming the help offer(s) of " + confMsgs.size() + " agents.");
-
-			for (int i = 0 ; i < confMsgs.size() ; i++){
-				sendMsg(confMsgs.get(i).receiver(), confMsgs.get(i).toString());
-			}
-
-			setState(ResMAPState.R_DO_OWN_ACT);
-		}
-		else
-			setState(ResMAPState.R_BLOCKED);
-	}
-
 
 	public void method_R_GET_HELP_REQ(){
 		ArrayList<Message> helpReqMsgs = new ArrayList<Message>();

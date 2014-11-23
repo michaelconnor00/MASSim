@@ -17,13 +17,12 @@ public class ResourceMAP_BaseAgent extends Agent {
 
     // Debug output flags
     boolean dbgInf = false;
-    boolean dbgErr = true;
+    boolean dbgErr = false;
     boolean dbgInf2 = false;
 
 
     // Resource MAP toggles
     public static boolean canSacrifice = true;
-    //public static boolean multipleBids;  // Maybe implement this in the future
     public static double costToGoalHelpThreshold = 1.1;
 
 
@@ -210,6 +209,7 @@ public class ResourceMAP_BaseAgent extends Agent {
         wellbeing = wellbeing();
         logInf("My wellbeing = " + wellbeing);
 
+
         switch(state) {
             case S_INIT:
                 method_S_INIT();
@@ -279,17 +279,21 @@ public class ResourceMAP_BaseAgent extends Agent {
                         double eCost = estimatedCost(remainingPath(pos()));
                         int remPath = remainingPath(pos()).getNumPoints();
 
-                        String helpReqMsg = prepareHelpReqMsg(
-                                eCost, //estimated cost to goal
-                                teamBenefit, //teambenefit
-                                cost //next step cost
-                        );
+                        if (canCalc()) {
+                            String helpReqMsg = prepareHelpReqMsg(
+                                    eCost, //estimated cost to goal
+                                    teamBenefit, //teambenefit
+                                    cost //next step cost
+                            );
 
-                        logInf("Broadcasting help");
-                        logInf("Team benefit of help would be "+teamBenefit);
 
-                        broadcastMsg(helpReqMsg);
-                        this.numOfHelpReq++;
+                            logInf("Broadcasting help");
+                            logInf("Team benefit of help would be " + teamBenefit);
+
+                            broadcastMsg(helpReqMsg);
+                            this.numOfHelpReq++;
+                        }
+
                         setState(ResMAPState.R_IGNORE_HELP_REQ);
 
                     } else {
@@ -305,14 +309,15 @@ public class ResourceMAP_BaseAgent extends Agent {
     }
 
     public void method_S_RESPOND_TO_REQ(){
-        if(bidding && canSend())
+        if(bidding)
         {
             for (Message msg : bidMsgs){
-                logInf("Sending a bid to agent" + msg.getIntValue("requester"));
-                sendMsg(msg.getIntValue("requester"), msg.toString());
-                this.numOfBids++;
+                if(canSend()) {
+                    logInf("Sending a bid to agent" + msg.getIntValue("requester"));
+                    sendMsg(msg.getIntValue("requester"), msg.toString());
+                    this.numOfBids++;
+                }
             }
-
             setState(ResMAPState.R_BIDDING);
         }
 
@@ -327,18 +332,20 @@ public class ResourceMAP_BaseAgent extends Agent {
     }
 
     public void method_S_RESPOND_BIDS(){
-        if (canSend())
-        {
+
             logInf("Confirming the help offer(s) of " + confMsgs.size() + " agents.");
 
             for (int i = 0 ; i < confMsgs.size() ; i++){
-                sendMsg(confMsgs.get(i).receiver(), confMsgs.get(i).toString());
+                if (canSend())
+                {
+                    sendMsg(confMsgs.get(i).receiver(), confMsgs.get(i).toString());
+                }
+                else
+                    setState(ResMAPState.R_BLOCKED);
             }
 
             setState(ResMAPState.R_DO_OWN_ACT);
-        }
-        else
-            setState(ResMAPState.R_BLOCKED);
+
     }
 
 
@@ -467,7 +474,7 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                 logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
                         ", NTB= "+netTeamBenefit);
-                if (canSend()) {
+                if (canSend() && canCalc()) {
                     if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
                         bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
                         bidding = true;
@@ -972,7 +979,6 @@ public class ResourceMAP_BaseAgent extends Agent {
         helpReq.putTuple("nextStepCost", nextStepCost);
 
         helpReq.putTuple("wellbeing", wellbeing());
-//		lastSentWellbeing = wellbeing();
 
         return helpReq.toString();
     }
