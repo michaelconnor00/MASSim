@@ -1,143 +1,210 @@
 package massim;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 /**
  * The class to hold the board settings
+ * 
  * @author Omid Alemi
- *
+ * @version 1.1
  */
 public class Board {
+	private static Random rndBoardGen = new Random();
 
 	private int[][] mainBoard;
-		
-	private final int rows;
-	private final int cols;	
-	
 
-	
+	private final int rows;
+	private final int cols;
+
 	/**
-	 * Constructor 1: just with the size
+	 * Constructor
 	 * 
-	 * @param r The number of rows of the board
-	 * @param c The number of columns of the board 
+	 * @param r				The number of rows of the board
+	 * @param c        		The number of columns of the board
 	 */
-	public Board(int r, int c) { 
+	public Board(int r, int c) {
 		rows = r;
 		cols = c;
 		mainBoard = new int[rows][cols];
 	}
-	
+
 	/**
-	 * Constructor 2: get the board setting and creating an exact copy
-	 * @param board The 2dim array, representing the board's initial
-	 *        setting
+	 * The copy constructor.
+	 * 
+	 * @param initBoard		The board to be copied.
 	 */
-	public Board(Board board) {
-		rows = board.rows();
-		cols = board.cols();
+	public Board(Board initBoard) {
+		rows = initBoard.rows;
+		cols = initBoard.cols;
+		this.mainBoard = new int[rows][cols];
 		
 		for (int i=0;i<rows;i++)
 			for (int j=0;j<cols;j++)
-				this.mainBoard[i][j] = board.mainBoard[i][j];
-	}	
+				this.mainBoard[i][j] = initBoard.mainBoard[i][j];		
+	}
 	
 	/**
+	 * Returns the number of rows of the board
 	 * 
-	 * @return The number of rows of the board
+	 * @return 				The number of rows of the board in int
 	 */
 	public int rows() {
 		return rows;
 	}
-	
+
 	/**
+	 * Returns the number of columns of the board
 	 * 
-	 * @return The number of columns of the board
+	 * @return 				The number of columns of the board in int
 	 */
 	public int cols() {
 		return cols;
 	}
-	
-	
+
 	/**
-	 * Sets the board setting to the inputBoard
-	 * @param initBoard The input board setting to be the main board setting
+	 * Sets the board setting to the giving setting
+	 * 
+	 * @param initBoard		The input board setting to be the main board's 
+	 * 						setting
 	 */
 	public void setBoard(int[][] inputBoard) {
-		
+
 	}
-	
+
 	/**
 	 * Returns the board setting
-	 * @return 2 dim array of int representing the board's setting
+	 * 
+	 * @return 				2 dim array of int representing the board's 
+	 * 						setting
 	 */
-	public int[][] getBoard(){
+	public int[][] getBoard() {
 		return mainBoard;
 	}
-	
-	
+
 	/**
 	 * Sets the value of one specific cell
-	 * @param row
-	 * @param col
-	 * @param color
+	 * 
+	 * @param row			The row# of the desired cell
+	 * @param col       	The column# of the desired cell
+	 * @param color     	The new color for the desired cell
 	 */
-	public void  setCell(int row, int col, int color) {
-		
+	public void setCell(int row, int col, int color) {
+
 	}
-	
+
 	/**
-	 * Returns a board with randomly filled values (colors).
-	 * @return A new instance of the Board class
+	 * Creates a board with randomly filled values (colors).
+	 * 
+	 * Static method; 
+	 * 
+	 * @return 				The instance of the newly randomly generated board
 	 */
-	public static Board randomBoard(int rows, int cols, int startValue, int range ) {
+	public static Board randomBoard(int rows, int cols,int[] colorRange) {
 		Board b = new Board(rows, cols);
-		
-		Random rnd = new Random();
-		
-		for (int i=0;i<rows;i++)
-			for (int j=0;j<cols;j++)
-				b.mainBoard[i][j] = startValue + rnd.nextInt(range);
-		
+
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				b.mainBoard[i][j] = colorRange[rndBoardGen.nextInt(colorRange.length)];
 		return b;
+	}
+
+	/**
+	 * Adds random values (disturbance) to the cells of the board. 
+	 * 
+	 * Each cell on the board may be changed based on the probability defined by
+	 * disturbanecLevel.
+	 * 
+	 * @param disturbanceLevel		The level of disturbance, between 0 and 1.0
+	 */
+	public void disturb(double disturbanceLevel) {
+
+		Random rndColor = new Random();
+		Random rndChange = new Random();
+
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				if (rndChange.nextDouble() < disturbanceLevel)
+					mainBoard[i][j] = SimulationEngine.colorRange[rndColor
+							.nextInt(SimulationEngine.numOfColors)];
 	}
 	
 	/**
 	 * Adds random values (disturbance) to the cells of the board. 
-	 * Each cell on the board may be changed based on the probability
-	 * defined by disturbanecLevel  
-	 * @param disturbanceLevel The level of disturbance, between 0 and 1.0 
+	 * 
+	 * Each cell on the board may be changed based on the probability defined by
+	 * disturbanecLevel.
+	 * 
+	 * @param disturbanceLevel		The level of disturbance, between 0 and 1.0
 	 */
-	public void distrub(double disturbanceLevel) {
+	public void disturb(double disturbanceLevel,double pulseLevel, double pulseProb) {
+
+		Random rndColor = new Random();
+		Random rndChange = new Random();
+
+		double dl;
 		
+		if (rndChange.nextDouble() < pulseProb)
+			dl = pulseLevel;
+		else
+			dl = disturbanceLevel;
+		
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+				if (rndChange.nextDouble() < dl)
+					mainBoard[i][j] = SimulationEngine.colorRange[rndColor
+							.nextInt(SimulationEngine.numOfColors)];
 	}
-	
-	
-	
+
 	/**
-	 * The overridden clone() method.
-	 * would be used to create a new copy of the current board's representation.
+	 * Converts the current setting of the board into a string.
+	 * 
+	 * For debugging purposes
+	 * 
+	 * @return 			The string representing the current setting of the board
 	 */
-	@Override
-	public Board clone() {
-		// Creates a new instance of the Board class with the 
-		// same internal representation 
-		return null;
-	}
-	
 	@Override
 	public String toString() {
 		String out = "";
-		
-		for (int i=0;i<rows;i++)
-		{
-			for (int j=0;j<cols;j++)
-				out += mainBoard[i][j]+ " ";
-			out +="\n";
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++)
+				out += mainBoard[i][j] + " ";
+			out += "\n";
 		}
-				
+
 		return out;
 	}
-		
+
+	/**
+	 * Prints the costs associated with each square of the board based on the
+	 * given action costs set into a string.
+	 * 
+	 * Used for debugging purposes.
+	 * 
+	 * @param actionCosts		The action costs set of an agent
+	 * @return					The string representation of the board; 
+	 * 							displaying the costs of each cell
+	 */
+	public String boardCostsToString(int actionCosts[]) {
+		String out = "";
+		int[] colorRange = SimulationEngine.colorRange;
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				int index = 0;
+				for (int k = 0; k < colorRange.length; k++) {
+					int color = mainBoard[i][j];
+					if (color == colorRange[k])
+						index = k;
+				}
+				out += actionCosts[index] + "\t";
+				;
+
+			}
+			out += "\n";
+		}
+
+		return out;
+	}
+
 }
