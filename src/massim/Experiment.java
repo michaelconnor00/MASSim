@@ -256,6 +256,16 @@ public class Experiment {
 						getTeams()[iIndex].setLogger(logger, iIndex);
 						validateResourceMapParams(teamConfig, iIndex + 1,  1);
 						break;
+					case ResourceMAP_TB:
+						getTeams()[iIndex] = new ResourceMAPRepTeam(); //TODO update team
+						getTeams()[iIndex].setLogger(logger, iIndex);
+						validateResourceMapParams(teamConfig, iIndex + 1,  2);
+						break;
+					case ResourceMAP_TBRep:
+						getTeams()[iIndex] = new ResourceMAPRepTeam(); //TODO update team
+						getTeams()[iIndex].setLogger(logger, iIndex);
+						validateResourceMapParams(teamConfig, iIndex + 1,  3);
+						break;
 					default:
 						strErrorMessage += "Invalid team type " + teamConfig.getTeamType() + "\n";
 						break;
@@ -618,26 +628,31 @@ public class Experiment {
 	{
 		String suffix = "for ResourceMap [Team - " + index + "].\n";
 		if(childType == 1)
-			suffix = "for ResourceMapReplaning [Team - " + index + "].\n";
+			suffix = "for ResourceMapReplanning [Team - " + index + "].\n";
+		if(childType == 2)
+			suffix = "for ResourceMapTB [Team - " + index + "].\n";
+		if(childType == 3)
+			suffix = "for ResourceMapTBReplanning [Team - " + index + "].\n";
 
 		//Cost to goal Threshold
-		Double[] costToGTh = validateRangeValue(teamConfig, "Cost to goal Threshold");
-		if(costToGTh.length == 1) {
-			if(childType == 1)
-				ResourceMAPRepAgent.costToGoalHelpThreshold = costToGTh[0];
+		Double[] costToGoalThreshold = validateRangeValue(teamConfig, "Cost to goal Threshold");
+		
+		if(costToGoalThreshold.length == 1) {
+			if(childType == 1 || childType == 3) //MC
+				ResourceMAPRepAgent.costToGoalHelpThreshold = costToGoalThreshold[0];
 			else
-				ResourceMAPAgent.costToGoalHelpThreshold = costToGTh[0];
+				ResourceMAPAgent.costToGoalHelpThreshold = costToGoalThreshold[0];
 		}
-		else if(costToGTh.length == 3) {
-			if(childType == 1)
-				lstSimRange.add(new SimulationRange("RESMAPREP-CTGT", costToGTh[0], costToGTh[1], costToGTh[2]));
+		else if(costToGoalThreshold.length == 3) {
+			if(childType == 1 || childType == 3) //MC
+				lstSimRange.add(new SimulationRange("RESMAPREP-CTGT", costToGoalThreshold[0], costToGoalThreshold[1], costToGoalThreshold[2]));
 			else
-				lstSimRange.add(new SimulationRange("RESMAP-CTGT", costToGTh[0], costToGTh[1], costToGTh[2]));
+				lstSimRange.add(new SimulationRange("RESMAP-CTGT", costToGoalThreshold[0], costToGoalThreshold[1], costToGoalThreshold[2]));
 		}
 
 		//Can sacrifice
 		if(teamConfig.getPropertyValue("Can Sacrifice") != null) {
-			if(childType == 1) {
+			if(childType == 1 || childType == 3) {//MC
 				ResourceMAPRepAgent.canSacrifice = teamConfig.getPropertyValue("Can Sacrifice").equalsIgnoreCase("Yes");
 			} else {
 				ResourceMAPAgent.canSacrifice = teamConfig.getPropertyValue("Can Sacrifice").equalsIgnoreCase("Yes");
