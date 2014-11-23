@@ -7,7 +7,7 @@ import java.util.Comparator;
 import massim.*;
 
 /**
- * Resource MAP Agent
+ * Resource MAP Agent - Base class (based on the ResourceMAP_TBAgent)
  *
  * @author Devin Calado, Michael Conner
  * @version 1.0 - November 2014
@@ -20,14 +20,6 @@ public class ResourceMAP_BaseAgent extends Agent {
     boolean dbgErr = true;
     boolean dbgInf2 = false;
 
-
-    // Adjustable Parameters:
-
-    // Request and cost thresholds
-//	public static double requestThreshold;
-//	public static double lowCostThreshold;
-//	public static double EPSILON;
-    //public static boolean useTeamWellbeing = false; //TODO not implemented see AdvActionMAPAgent
 
     // Resource MAP toggles
     public static boolean canSacrifice = true;
@@ -281,10 +273,9 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                     int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
-                    if (canBCast()) {
+                    if (canBCast() && canCalc()){
 
                         // Create the help request message
-                        //TODO change to team benefit as per action map
                         double eCost = estimatedCost(remainingPath(pos()));
                         int remPath = remainingPath(pos()).getNumPoints();
 
@@ -424,6 +415,16 @@ public class ResourceMAP_BaseAgent extends Agent {
             // Sort help request messages from cheapest cost to goal to most expensive
             Collections.sort(helpReqMsgs, estimatedCostToGoalOrder);
 
+            double estimatedCostToGoal = Double.MAX_VALUE;
+
+            if(canCalc()){
+                estimatedCostToGoal = estimatedCost(remainingPath(pos()));
+            }
+            else{
+                setState(ResMAPState.S_RESPOND_TO_REQ);
+            }
+
+
             // Check to see if any of the requester can get to the goal for less than self.
             for (int i = 0; (i < helpReqMsgs.size()) && canSacrifice && !bidding; i++) {
                 Double reqECostToGoal = helpReqMsgs.get(i).getDoubleValue("eCostToGoal");
@@ -431,8 +432,8 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                 //check that the myCostToGoal:requesterCostToGoal ratio is greater than threshold
                 // and I have enough resources to sacrifice.
-                if (((estimatedCost(remainingPath(pos())) / reqECostToGoal) > costToGoalHelpThreshold) &&
-                        (resourcePoints - Team.unicastCost - TeamTask.helpOverhead) >= reqECostToGoal) { //TODO why: TeamTask.helpOverhead,
+                if (((estimatedCostToGoal / reqECostToGoal) > costToGoalHelpThreshold) &&
+                        (resourcePoints - Team.unicastCost - TeamTask.helpOverhead) >= reqECostToGoal) {
                     bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), wellbeing()));
                     helpReqMsgs.remove(helpReqMsgs.get(i));
                     bidding = true;
@@ -440,7 +441,7 @@ public class ResourceMAP_BaseAgent extends Agent {
                 }
             }
 
-            int myMaxAssistance = resourcePoints - (int) estimatedCost(remainingPath(pos())) - TeamTask.helpOverhead;
+            int myMaxAssistance = resourcePoints - (int) estimatedCostToGoal;
 
             // Sort DESC by teamBenefit, most to least.
             Collections.sort(helpReqMsgs, tbOrder);
@@ -536,10 +537,20 @@ public class ResourceMAP_BaseAgent extends Agent {
 
             //Check for a self sacrifice agent
             Collections.sort(receivedBidMsgs, wellbeingOrder); //sort DESC wellbeing
+
+            double estimatedCostToGoal = Double.MAX_VALUE;
+
+            if(canCalc()){
+                estimatedCostToGoal = estimatedCost(remainingPath(pos()));
+            }
+            else{
+                setState(ResMAPState.S_RESPOND_TO_REQ);
+            }
+
             for (Message bid : receivedBidMsgs)
             {
                 //Check If agent has sacrificed own resources to self to reach goal
-                if (bid.getIntValue("resourceAmount") >= estimatedCost(remainingPath(pos())) && canSend()){
+                if (bid.getIntValue("resourceAmount") >= estimatedCostToGoal && canSend()){
                     resourcePoints -= Team.unicastCost;
                     buffer = 0;
                     resourcePoints += bid.getIntValue("resourceAmount");

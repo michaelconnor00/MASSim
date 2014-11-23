@@ -1,7 +1,7 @@
 package massim.agents.resourcemap;
 
 /**
- * ResourceMAP Team
+ * ResourceMAP_TB Team
  *
  * @author Devin Calado, Michael Conner
  * @version 1.0 - November 2014
