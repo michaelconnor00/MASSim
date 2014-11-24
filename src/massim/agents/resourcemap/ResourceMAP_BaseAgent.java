@@ -17,7 +17,7 @@ public class ResourceMAP_BaseAgent extends Agent {
 
     // Debug output flags
     boolean dbgInf = false;
-    boolean dbgErr = false;
+    boolean dbgErr = true;
     boolean dbgInf2 = false;
 
 
@@ -206,9 +206,10 @@ public class ResourceMAP_BaseAgent extends Agent {
         AgCommStatCode returnCode = AgCommStatCode.DONE;
         logInf("Send Cycle");
 
-        wellbeing = wellbeing();
-        logInf("My wellbeing = " + wellbeing);
-
+        if(canCalc()){
+            wellbeing = wellbeing();
+            logInf("My wellbeing = " + wellbeing);
+        }
 
         switch(state) {
             case S_INIT:
@@ -273,13 +274,12 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                     int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
-                    if (canBCast() && canCalc()){
+                    if (canCalcAndBCast()){
 
                         // Create the help request message
                         double eCost = estimatedCost(remainingPath(pos()));
-                        int remPath = remainingPath(pos()).getNumPoints();
 
-                        if (canCalc()) {
+
                             String helpReqMsg = prepareHelpReqMsg(
                                     eCost, //estimated cost to goal
                                     teamBenefit, //teambenefit
@@ -292,7 +292,7 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                             broadcastMsg(helpReqMsg);
                             this.numOfHelpReq++;
-                        }
+
 
                         setState(ResMAPState.R_IGNORE_HELP_REQ);
 
@@ -474,7 +474,7 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                 logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
                         ", NTB= "+netTeamBenefit);
-                if (canSend() && canCalc()) {
+                if (canCalcAndSend()) {
                     if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
                         bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
                         bidding = true;
@@ -689,13 +689,7 @@ public class ResourceMAP_BaseAgent extends Agent {
             case OWN:
                 setLastAction("Self");
                 result = doOwnAction();
-                break;/*
-		case HAS_HELP:
-			//result = doGetHelpAction();
-			break;
-		case HELP_ANOTHER:
-			//result = doHelpAnother();
-			break;*/
+                break;
             case SKIP:
                 setLastAction("Skipped");
                 result = true;
@@ -1103,8 +1097,6 @@ public class ResourceMAP_BaseAgent extends Agent {
         // An agent will be performing its own action, with the resources given by another agent
         RowCol nextCell = path().getNextPoint(pos());
         int cost = getCellCost(nextCell);
-//		logInf("Yaay! Agent"+ helperAgents+" has provided resources so I can perform my own action!");
-        //setPos(nextCell);
 
         if (resourcePoints() >= cost )
         {
@@ -1119,9 +1111,6 @@ public class ResourceMAP_BaseAgent extends Agent {
             return false;
         }
 
-//		setLastAction("Helped by:" + (helperAgent + 1));
-//		helperAgent = -1;
-//		return true;
     }
 
     /**
@@ -1240,6 +1229,19 @@ public class ResourceMAP_BaseAgent extends Agent {
         return (resourcePoints() >= Agent.calculationCost);
     }
 
+    /**
+     * Indicates whether the agent has enough resources to do calculations and broadcast a message.
+     *
+     * @return					true if there are enough resources /
+     * 							false if there aren't enough resources
+     */
+    protected boolean canCalcAndBCast() {
+        return (resourcePoints() >= Agent.calculationCost + Team.broadcastCost);
+    }
+
+    protected boolean canCalcAndSend(){
+        return (resourcePoints() >= Agent.calculationCost + Team.unicastCost);
+    }
 
     /**
      * Broadcast the given String encoded message.

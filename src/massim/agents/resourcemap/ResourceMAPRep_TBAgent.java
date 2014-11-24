@@ -71,7 +71,7 @@ public class ResourceMAPRep_TBAgent extends ResourceMAP_BaseAgent {
 
 					int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
-					if (canBCast() && canCalc()){
+					if (canCalcAndBCast()){
 
 						// Create the help request message
 						double eCost = estimatedCost(remainingPath(pos()));

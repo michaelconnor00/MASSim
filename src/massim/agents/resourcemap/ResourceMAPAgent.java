@@ -37,7 +37,7 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 
 		if (reachedGoal())
 		{
-			if (canBCast()) {
+			if (canCalcAndBCast()) {
 				logInf2("Broadcasting my wellbeing to the team");
 				broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
 			}
@@ -54,7 +54,7 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 			{
 				logInf2("Need help!");
 
-				if (canBCast() && canCalc()) {
+				if (canCalcAndBCast()) {
 
 					// Create the help request message
 					double eCost = estimatedCost(remainingPath(pos()));
@@ -143,22 +143,24 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 
 			// Bidding for helping achieve next cell
 			for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) {
-				int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
-				double reqAvgStepCostToGoal = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
-				int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead;
-				int requesterAgent = helpReqMsgs.get(i).sender();
+				if(canCalc()) {
+					int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
+					double reqAvgStepCostToGoal = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
+					int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead;
+					int requesterAgent = helpReqMsgs.get(i).sender();
 
-				// Helper has enough resources to reach their own goal
-				if ((estimatedCostToGoal <= resourcePoints - TeamTask.helpOverhead) &&
-						myMaxAssistance > reqNextStepCost) {
-					bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
-					bidding = true;
-				}
-				// Helper does not have enough resource points to get to their goal
-				// My average step costs from current position to the goal is greater than the help requester's.
-				else if ((estimatedCostToGoal / remainingPath(pos()).getNumPoints()) > reqAvgStepCostToGoal) {
-					bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
-					bidding = true;
+					// Helper has enough resources to reach their own goal
+					if ((estimatedCostToGoal <= resourcePoints - TeamTask.helpOverhead) &&
+							myMaxAssistance > reqNextStepCost) {
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+						bidding = true;
+					}
+					// Helper does not have enough resource points to get to their goal
+					// My average step costs from current position to the goal is greater than the help requester's.
+					else if ((estimatedCostToGoal / remainingPath(pos()).getNumPoints()) > reqAvgStepCostToGoal) {
+						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+						bidding = true;
+					}
 				}
 
 			}
@@ -347,14 +349,10 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 	protected String prepareHelpReqMsg(int stepsToGoal, double estimatedCostToGoal, double averageCellCost, int nextStepCost) {
 
 		Message helpReq = new Message(id(),-1,MAP_HELP_REQ_MSG);
-		//helpReq.putTuple("teamBenefit", Integer.toString(teamBenefit));
-		//helpReq.putTuple("requiredResources", requiredResources);
-
 		helpReq.putTuple("eCostToGoal", estimatedCostToGoal);
 		helpReq.putTuple("stepsToGoal", stepsToGoal);
 		helpReq.putTuple("averageStepCost", averageCellCost);
 		helpReq.putTuple("nextStepCost", nextStepCost);
-
 		helpReq.putTuple("wellbeing", wellbeing());
 
 		return helpReq.toString();
