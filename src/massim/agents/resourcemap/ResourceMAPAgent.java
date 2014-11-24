@@ -37,7 +37,7 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 
 		if (reachedGoal())
 		{
-			if (canCalcAndBCast()) {
+			if (canCalcAndBCast(1)) {
 				logInf2("Broadcasting my wellbeing to the team");
 				broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
 			}
@@ -54,7 +54,7 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 			{
 				logInf2("Need help!");
 
-				if (canCalcAndBCast()) {
+				if (canCalcAndBCast(2)) {
 
 					// Create the help request message
 					double eCost = estimatedCost(remainingPath(pos()));

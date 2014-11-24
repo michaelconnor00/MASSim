@@ -274,7 +274,7 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                     int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
-                    if (canCalcAndBCast()){
+                    if (canCalcAndBCast(1)){
 
                         // Create the help request message
                         double eCost = estimatedCost(remainingPath(pos()));
@@ -474,13 +474,15 @@ public class ResourceMAP_BaseAgent extends Agent {
 
                 logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
                         ", NTB= "+netTeamBenefit);
-                if (canCalcAndSend()) {
+                if (canCalcAndSend(1)) {
+                    double wellBeing = wellbeing();
+
                     if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
-                        bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+                        bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellBeing));
                         bidding = true;
-                    } else if (netTeamBenefit > 0 && reqWellbeing > wellbeing()) {
+                    } else if (netTeamBenefit > 0 && reqWellbeing > wellBeing) {
                         //Bid all the assistance you have available
-                        bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
+                        bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellBeing));
                         bidding = true;
                     }
                 }
@@ -1235,13 +1237,20 @@ public class ResourceMAP_BaseAgent extends Agent {
      * @return					true if there are enough resources /
      * 							false if there aren't enough resources
      */
-    protected boolean canCalcAndBCast() {
-        return (resourcePoints() >= Agent.calculationCost + Team.broadcastCost);
+    protected boolean canCalcAndBCast(int numberCalcs) {
+        return (resourcePoints() >= (Agent.calculationCost * numberCalcs) + Team.broadcastCost);
+    }
+    /**
+     *
+     * Indicates whether the agent has enough resources to do calculations and send a message.
+     *
+     * @return					true if there are enough resources /
+     * 							false if there aren't enough resources
+     */
+    protected boolean canCalcAndSend(int numberCalcs){
+        return (resourcePoints() >= (Agent.calculationCost * numberCalcs) + Team.unicastCost);
     }
 
-    protected boolean canCalcAndSend(){
-        return (resourcePoints() >= Agent.calculationCost + Team.unicastCost);
-    }
 
     /**
      * Broadcast the given String encoded message.
