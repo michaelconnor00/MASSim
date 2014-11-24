@@ -34,12 +34,22 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 				System.out.println("Agent "+i+":" + agentsWellbeing[i]);
 		}
 
+		if(canCalc()){
+			estimatedCostToGoal = estimatedCost(remainingPath(pos()));
+		}
+		else{
+			setState(ResMAPState.R_BLOCKED);
+			return;
+		}
+
+		wellbeing = wellbeing();
+
 
 		if (reachedGoal())
 		{
-			if (canCalcAndBCast(1)) {
+			if (canBCast()) {
 				logInf2("Broadcasting my wellbeing to the team");
-				broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
+				broadcastMsg(prepareWellbeingUpMsg(wellbeing));
 			}
 			setState(ResMAPState.R_GET_HELP_REQ);
 		}
@@ -48,16 +58,16 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 			RowCol nextCell = path().getNextPoint(pos());
 			int cost = getCellCost(nextCell);
 
-			boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);
+			boolean needHelp = (cost > resourcePoints());
 
 			if (needHelp)
 			{
 				logInf2("Need help!");
 
-				if (canCalcAndBCast(2)) {
+				if (canBCast()) {
 
 					// Create the help request message
-					double eCost = estimatedCost(remainingPath(pos()));
+					double eCost = estimatedCostToGoal;
 					int remPath = remainingPath(pos()).getNumPoints();
 					double avgCellCostToGoal = eCost/remPath;
 					int nextCellCost = getCellCost(path().getNextPoint(pos()));
@@ -65,7 +75,7 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 					String helpReqMsg = prepareHelpReqMsg(remainingPath(pos()).getNumPoints(),
 							eCost,
 							avgCellCostToGoal,
-							nextCellCost);
+							nextCellCost, wellbeing);
 
 					broadcastMsg(helpReqMsg);
 					this.numOfHelpReq++;
@@ -81,6 +91,46 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 		}
 	}
 
+
+	public void method_S_RESPOND_TO_REQ(){
+		if(bidding)
+		{
+			for (Message msg : bidMsgs){
+				if(canSend()) {
+					logInf("Sending a bid to agent" + msg.getIntValue("requester"));
+					sendMsg(msg.getIntValue("requester"), msg.toString());
+					this.numOfBids++;
+				}
+			}
+			setState(ResMAPState.R_BIDDING);
+		}
+
+		else
+		{
+			int cost = getCellCost(path().getNextPoint(pos()));
+			if (cost <= resourcePoints())
+				setState(ResMAPState.R_DO_OWN_ACT);
+			else
+				setState(ResMAPState.R_BLOCKED);
+		}
+	}
+
+	public void method_S_RESPOND_BIDS(){
+
+		logInf("Confirming the help offer(s) of " + confMsgs.size() + " agents.");
+
+		for (int i = 0 ; i < confMsgs.size() ; i++){
+			if (canSend())
+			{
+				sendMsg(confMsgs.get(i).receiver(), confMsgs.get(i).toString());
+			}
+			else
+				setState(ResMAPState.R_BLOCKED);
+		}
+
+		setState(ResMAPState.R_DO_OWN_ACT);
+
+	}
 
 	public void method_R_GET_HELP_REQ(){
 		ArrayList<Message> helpReqMsgs = new ArrayList<Message>();
@@ -111,15 +161,6 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 			// Sort help request messages from cheapest cost to goal to most expensive
 			Collections.sort(helpReqMsgs, estimatedCostToGoalOrder);
 
-			double estimatedCostToGoal = Double.MAX_VALUE;
-
-			if(canCalc()){
-				estimatedCostToGoal = estimatedCost(remainingPath(pos()));
-			}
-			else{
-				setState(ResMAPState.S_RESPOND_TO_REQ);
-			}
-
 			// Check to see if any of the requester can get to the goal for less than self.
 			for (int i = 0; (i < helpReqMsgs.size()) && canSacrifice && !bidding; i++) {
 				Double reqECostToGoal = helpReqMsgs.get(i).getDoubleValue("eCostToGoal");
@@ -143,8 +184,6 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 
 			// Bidding for helping achieve next cell
 			for (int i = 0; (i < helpReqMsgs.size()) && !bidding; i++) {
-				if(canCalc()) {
-					int reqStepsToGoal = helpReqMsgs.get(i).getIntValue("stepsToGoal");
 					double reqAvgStepCostToGoal = helpReqMsgs.get(i).getDoubleValue("averageStepCost");
 					int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead;
 					int requesterAgent = helpReqMsgs.get(i).sender();
@@ -161,8 +200,6 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 						bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellbeing()));
 						bidding = true;
 					}
-				}
-
 			}
 
 		}
@@ -220,15 +257,6 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 			int buffer = getCellCost(path().getNextPoint(pos())) + Team.unicastCost;
 
 			Collections.sort(receivedBidMsgs, wellbeingOrder);
-
-			double estimatedCostToGoal = Double.MAX_VALUE;
-
-			if(canCalc()){
-				estimatedCostToGoal = estimatedCost(remainingPath(pos()));
-			}
-			else{
-				setState(ResMAPState.S_BLOCKED);
-			}
 
 			for (Message bid : receivedBidMsgs)
 			{
@@ -346,14 +374,14 @@ public class ResourceMAPAgent extends ResourceMAP_BaseAgent {
 	 *
 	 * @return						The message encoded in String
 	 */
-	protected String prepareHelpReqMsg(int stepsToGoal, double estimatedCostToGoal, double averageCellCost, int nextStepCost) {
+	protected String prepareHelpReqMsg(int stepsToGoal, double estimatedCostToGoal, double averageCellCost, int nextStepCost, double wellbeing) {
 
 		Message helpReq = new Message(id(),-1,MAP_HELP_REQ_MSG);
 		helpReq.putTuple("eCostToGoal", estimatedCostToGoal);
 		helpReq.putTuple("stepsToGoal", stepsToGoal);
 		helpReq.putTuple("averageStepCost", averageCellCost);
 		helpReq.putTuple("nextStepCost", nextStepCost);
-		helpReq.putTuple("wellbeing", wellbeing());
+		helpReq.putTuple("wellbeing", wellbeing);
 
 		return helpReq.toString();
 	}

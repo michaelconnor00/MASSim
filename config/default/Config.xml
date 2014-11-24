@@ -1417,7 +1417,7 @@
         <configValues>
             <entry>
                 <key>Team Name</key>
-                <value>Resource MAP TeamBenefit Replanning</value>
+                <value>Resource MAP TeamBeneift Re-Plan</value>
             </entry>
             <entry>
                 <key>Cost to goal Threshold</key>
@@ -1433,7 +1433,7 @@
             </entry>
             <entry>
                 <key>Agent Type</key>
-                <value>Resource MAP TeamBenefit Replanning</value>
+                <value>Resource MAP TeamBeneift Re-Plan</value>
             </entry>
             <entry>
                 <key>Use Initial Optimum Assignment</key>

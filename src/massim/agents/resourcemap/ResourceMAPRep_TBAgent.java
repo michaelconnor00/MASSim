@@ -14,7 +14,7 @@ import java.util.Comparator;
  * @version 1.0 - November 2014
  *
  */
-public class ResourceMAPRep_TBAgent extends ResourceMAP_BaseAgent {
+public class ResourceMAPRep_TBAgent extends ResourceMAP_TBAgent {
 
 	/**
 	 * The Constructor
@@ -41,10 +41,16 @@ public class ResourceMAPRep_TBAgent extends ResourceMAP_BaseAgent {
 			replan();
 			replanned = true;
 		}
-		else {
-			//logErr("Could not replan " + resourcePoints());
+
+		if(canCalc()){
+			estimatedCostToGoal = estimatedCost(remainingPath(pos()));
+		}
+		else{
+			setState(ResMAPState.R_BLOCKED);
+			return;
 		}
 
+		wellbeing = wellbeing();
 
 		if (reachedGoal())
 		{
@@ -71,23 +77,21 @@ public class ResourceMAPRep_TBAgent extends ResourceMAP_BaseAgent {
 
 					int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
-					if (canCalcAndBCast(1)){
-
-						// Create the help request message
-						double eCost = estimatedCost(remainingPath(pos()));
-						int remPath = remainingPath(pos()).getNumPoints();
-
+					if (canBCast()){
 						String helpReqMsg = prepareHelpReqMsg(
-								eCost, //estimated cost to goal
+								estimatedCostToGoal, //estimated cost to goal
 								teamBenefit, //teambenefit
 								cost //next step cost
 						);
 
+
 						logInf("Broadcasting help");
-						logInf("Team benefit of help would be "+teamBenefit);
+						logInf("Team benefit of help would be " + teamBenefit);
 
 						broadcastMsg(helpReqMsg);
 						this.numOfHelpReq++;
+
+
 						setState(ResMAPState.R_IGNORE_HELP_REQ);
 
 					} else {

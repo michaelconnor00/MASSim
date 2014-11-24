@@ -257,12 +257,12 @@ public class Experiment {
 						validateResourceMapParams(teamConfig, iIndex + 1,  1);
 						break;
 					case ResourceMAP_TB:
-						getTeams()[iIndex] = new ResourceMAPRepTeam(); //TODO update team
+						getTeams()[iIndex] = new ResourceMAP_TBTeam();
 						getTeams()[iIndex].setLogger(logger, iIndex);
 						validateResourceMapParams(teamConfig, iIndex + 1,  2);
 						break;
 					case ResourceMAP_TBRep:
-						getTeams()[iIndex] = new ResourceMAPRepTeam(); //TODO update team
+						getTeams()[iIndex] = new ResourceMAPRep_TBTeam();
 						getTeams()[iIndex].setLogger(logger, iIndex);
 						validateResourceMapParams(teamConfig, iIndex + 1,  3);
 						break;

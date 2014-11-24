@@ -39,33 +39,41 @@ public class ResourceMAPRepAgent extends ResourceMAPAgent {
             replan();
             replanned = true;
         }
-        else {
-            //logErr("Could not replan " + resourcePoints());
+
+        if(canCalc()){
+            estimatedCostToGoal = estimatedCost(remainingPath(pos()));
         }
+        else{
+            setState(ResMAPState.R_BLOCKED);
+            return;
+        }
+
+        wellbeing = wellbeing();
+
 
         if (reachedGoal())
         {
-            if (canCalcAndBCast(1)) {
+            if (canBCast()) {
                 logInf2("Broadcasting my wellbeing to the team");
-                broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
+                broadcastMsg(prepareWellbeingUpMsg(wellbeing));
             }
-            setState(ResourceMAP_BaseAgent.ResMAPState.R_GET_HELP_REQ);
+            setState(ResMAPState.R_GET_HELP_REQ);
         }
         else
         {
             RowCol nextCell = path().getNextPoint(pos());
             int cost = getCellCost(nextCell);
 
-            boolean needHelp = (cost > resourcePoints());// || (cost > requestThreshold);
+            boolean needHelp = (cost > resourcePoints());
 
             if (needHelp)
             {
                 logInf2("Need help!");
 
-                if (canCalcAndBCast(1)) {
+                if (canBCast()) {
 
                     // Create the help request message
-                    double eCost = estimatedCost(remainingPath(pos()));
+                    double eCost = estimatedCostToGoal;
                     int remPath = remainingPath(pos()).getNumPoints();
                     double avgCellCostToGoal = eCost/remPath;
                     int nextCellCost = getCellCost(path().getNextPoint(pos()));
@@ -73,18 +81,18 @@ public class ResourceMAPRepAgent extends ResourceMAPAgent {
                     String helpReqMsg = prepareHelpReqMsg(remainingPath(pos()).getNumPoints(),
                             eCost,
                             avgCellCostToGoal,
-                            nextCellCost);
+                            nextCellCost, wellbeing);
 
                     broadcastMsg(helpReqMsg);
                     this.numOfHelpReq++;
-                    setState(ResourceMAP_BaseAgent.ResMAPState.R_IGNORE_HELP_REQ);
+                    setState(ResMAPState.R_IGNORE_HELP_REQ);
 
                 } else
-                    setState(ResourceMAP_BaseAgent.ResMAPState.R_BLOCKED);
+                    setState(ResMAPState.R_BLOCKED);
             }
             else
             {
-                setState(ResourceMAP_BaseAgent.ResMAPState.R_GET_HELP_REQ);
+                setState(ResMAPState.R_GET_HELP_REQ);
             }
         }
     }

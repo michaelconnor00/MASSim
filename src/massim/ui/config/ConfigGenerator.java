@@ -437,8 +437,8 @@ public class ConfigGenerator {
 			teamConfig.add(new ConfigProperty("Can Sacrifice", ValueType.Single, DataType.Text, InputType.FixedChoices, new String[] {"Yes", "No"}, false, null, null, "Whether an agent will sacrifice itself or not."));
 			teamConfig.add(new ConfigProperty("WindowColor", ValueType.Single, DataType.Text, InputType.FreeText, null, false, null, null, ""));
 			teamConfig.add(new ConfigProperty("WLL", ValueType.Single, DataType.Decimal, InputType.OptionalDropDown, strValues, true, strValues, strValues, "Low watermark value to compare wellbeing for requesting help."));
-			teamConfig.add("Agent Type", "Resource MAP TeamBenefit Replanning");
-			teamConfig.add("Team Name", "Resource MAP TeamBenefit Replanning");
+			teamConfig.add("Agent Type", "Resource MAP TeamBeneift Re-Plan");
+			teamConfig.add("Team Name", "Resource MAP TeamBeneift Re-Plan");
 			teamConfig.add("Cost to goal Threshold", "1.1");
 			teamConfig.add("Can Sacrifice", "No");
 			teamConfig.add("Use Initial Optimum Assignment", "Yes");
