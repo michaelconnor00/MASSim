@@ -36,13 +36,17 @@ public class ResourceExp {
 
 		try {
 
-			int experimentNumber = -1;
+//			int experimentNumber = -1;
+			String experimentNumber;
 			int numberOfExperiments = -1;
 			int numberOfRuns = -1;
 			
 			
 			System.out.println("Enter the experiment number:");
-			experimentNumber = inputScanner.nextInt();
+//			experimentNumber = inputScanner.nextInt();
+			experimentNumber = inputScanner.nextLine();
+			String[] numList = experimentNumber.split(",");
+//			System.out.println(""+numList[0]+", "+numList[1]+", "+numList[2]);
 
 			System.out.println("Enter the number of experiments to run:");
 			numberOfExperiments = inputScanner.nextInt();
@@ -55,52 +59,56 @@ public class ResourceExp {
 
 			if (numberOfExperiments < 1)
 				throw new Exception("numberOfExperiments is invalid!");
-			
-			// 3 Teams , variable: disturbance amount
-			if (experimentNumber == 1) {
-				runSimulation1(numberOfExperiments, numberOfRuns);
-			}
-			
-			// 6 Teams, variable: disturbance amount
-			else if (experimentNumber == 2){
-				runSimulation2(numberOfExperiments, numberOfRuns);
-			}
-
-			// 6 Teams, variable: initial resources (Constrained Resources)
-			else if (experimentNumber == 3){
-				runSimulation3(numberOfExperiments, numberOfRuns);
-			}
-
-			// 6 Teams, variable: initial resources (Constrained Resources (2x exp #3))
-			else if (experimentNumber == 4){
-				runSimulation4(numberOfExperiments, numberOfRuns);
-			}
-
-			// 6 Teams, variable: increasing unicast costs
-			else if (experimentNumber == 5){
-				runSimulation5(numberOfExperiments, numberOfRuns);
-			}
-			
-			// 3 Teams , variable: init resources
-			else if (experimentNumber == 6) {
-			   runSimulation6(numberOfExperiments, numberOfRuns);
-			}
-		    
-		    // 3 Teams , variable: unicast cost
-			else if (experimentNumber == 7) {
-			   runSimulation7(numberOfExperiments, numberOfRuns);
-			}
-		    
-		    // 3 Teams , variable: calculation cost
-			else if (experimentNumber == 8) {
-			   runSimulation8(numberOfExperiments, numberOfRuns);
-			}
-		    
-
-			else{
-				System.out.println("A valid experiment was not selected, exiting program.");
-				System.exit(0);
-			}
+			for(int i=0; i<numList.length; i++){
+				String e = numList[i];
+				System.out.println("Exp num: "+e);
+				switch (e){
+					
+					// 3 Teams , variable: disturbance amount
+					case "1":
+						runSimulation1(numberOfExperiments, numberOfRuns);
+						break;
+					
+					// 6 Teams, variable: disturbance amount
+					case "2":
+						runSimulation2(numberOfExperiments, numberOfRuns);
+						break;
+		
+					// 6 Teams, variable: initial resources (Constrained Resources)
+					case "3":
+						runSimulation3(numberOfExperiments, numberOfRuns);
+						break;
+		
+					// 6 Teams, variable: initial resources (Constrained Resources (2x exp #3))
+					case "4":
+						runSimulation4(numberOfExperiments, numberOfRuns);
+						break;
+		
+					// 6 Teams, variable: increasing unicast costs
+					case "5":
+						runSimulation5(numberOfExperiments, numberOfRuns);
+						break;
+					
+					// 3 Teams , variable: init resources
+					case "6":
+					   runSimulation6(numberOfExperiments, numberOfRuns);
+						break;
+				    
+				    // 3 Teams , variable: unicast cost
+					case "7":
+					   runSimulation7(numberOfExperiments, numberOfRuns);
+						break;
+				    
+				    // 3 Teams , variable: calculation cost
+					case "8":
+					   runSimulation8(numberOfExperiments, numberOfRuns);
+						break;
+						
+					default:
+						System.out.println("A valid experiment was not selected, exiting program.");
+						System.exit(0);
+				}
+			}	
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -220,7 +220,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 					bidding = true;
 				} else if (netTeamBenefit > 0 && reqWellbeing > wellBeing) {
 					//Bid all the assistance you have available
-					bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellBeing));
+					bidMsgs.add(prepareBidMsg(requesterAgent, myMaxAssistance, wellBeing));//MC nov 27 2014
 					bidding = true;
 				}
 
@@ -300,7 +300,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			//Collections.sort(receivedBidMsgs, tbOrder); //sort TB DESC.
 
 			// Ascending wellbeing (previously sorted by well being in descending order)
-			Collections.reverse(receivedBidMsgs);  //TODO : we used wellbeing here, could try to use Team Benefit instead?
+			//Collections.reverse(receivedBidMsgs);  //TODO : we used wellbeing here, could try to use Team Benefit instead?
 
 			//Combine bids
 			for (int i=0; (i < receivedBidMsgs.size()) && (buffer > 0); i++){
@@ -310,23 +310,20 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 
 				if (bidAmount == buffer && canSend()){  //Only one bid required
 					buffer = 0;
-					resourcePoints -= Team.unicastCost;
 					resourcePoints += bidAmount;
 					//Use the whole bid
-					confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
+					confMsgs.add(prepareConfirmMsg(0, helperID));//MC Nov 27 2014
 				}
 				else if (bidAmount < buffer && canSend()){ //require multiple bids
 					buffer -= bidAmount;
-					resourcePoints -= Team.unicastCost;
 					resourcePoints += bidAmount;
 					//Use the whole bid
-					confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
+					confMsgs.add(prepareConfirmMsg(0, helperID));//MC Nov 27 2014
 				}
 				else if (bidAmount > buffer && canSend()){
-					resourcePoints -= Team.unicastCost;
 					resourcePoints += buffer;
 					//Use part of the bid, return un-used amount
-					confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID));
+					confMsgs.add(prepareConfirmMsg((bidAmount-buffer), helperID));//MC Nov 27 2014
 					buffer = 0; //Or break;
 				}
 				else{
@@ -334,7 +331,12 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 					logInf("Now I'm blocked!");
 				}
 			}
-
+			
+			if (buffer > 0){
+				//Then there were not enough bids to to achieve the resources I needed
+				//So release the bids that were used
+				confMsgs = new ArrayList<Message>();
+			}
 			setState(ResMAPState.S_RESPOND_BIDS);
 		}
 	}

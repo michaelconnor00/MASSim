@@ -653,6 +653,7 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
         Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
         bidMsg.putTuple("resourceAmount", resourceAmount);
         bidMsg.putTuple("requester", requester);
+//        bidMsg.putTuple("teamBenefit", helperTB); //MC nov 27 2014
         bidMsg.putTuple("wellbeing", helperWellBeing );
 
         return bidMsg;
