@@ -45,7 +45,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			return;
 		}
 
-//		wellbeing = wellbeingProximity();
+		wellbeing = wellbeingProximity();
 
 		if (reachedGoal())
 		{
@@ -192,7 +192,11 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			int myMaxAssistance = resourcePoints - (int) estimatedCostToGoal;
 
 			// Sort DESC by teamBenefit, most to least.
-			Collections.sort(helpReqMsgs, tbOrder);
+			//Collections.sort(helpReqMsgs, tbOrder);
+			// Sort ASC by wellbeing
+			Collections.sort(helpReqMsgs, wellbeingOrder); //Desc
+			Collections.reverse(helpReqMsgs); //ASC
+			
 			int stepTeamBenefit = 0;
 			int reqNextStepCost = 0;
 			double reqWellbeing = 0.0;
@@ -288,13 +292,13 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			int buffer = getCellCost(path().getNextPoint(pos()));
 
 			//Check for a self sacrifice agent
-			Collections.sort(receivedBidMsgs, wellbeingOrder); //sort DESC wellbeing
+			Collections.sort(receivedBidMsgs, wellbeingOrder); //sort ASC wellbeing
 
 			for (Message bid : receivedBidMsgs)
 			{
 				//Check If agent has sacrificed own resources to self to reach goal
 				if (bid.getIntValue("resourceAmount") >= estimatedCostToGoal ){//&& canSend()){
-//					System.out.println("----SACRIFICE");
+					System.out.println("----SACRIFICE");
 					buffer = 0;
 					resourcePoints += bid.getIntValue("resourceAmount");
 					//Use all the sacrificed resources.
@@ -303,10 +307,13 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			}
 
 			
-
+			/* All Commented means Desc Wellbeing */
 			// Ascending wellbeing (previously sorted by well being in descending order)
-			//Collections.reverse(receivedBidMsgs);  //TODO : we used wellbeing here, could try to use Team Benefit instead?
-			Collections.sort(receivedBidMsgs, tlossOrder); //sort TB DESC.
+			Collections.reverse(receivedBidMsgs);  //TODO : we used wellbeing here, could try to use Team Benefit instead?
+			// Ascending teamLoss
+			//Collections.sort(receivedBidMsgs, tlossOrder); //sort TB DESC.
+			// Descending teamLoss
+			//Collections.reverse(receivedBidMsgs);
 			
 			//Combine bids
 			for (int i=0; (i < receivedBidMsgs.size()) && (buffer > 0); i++){

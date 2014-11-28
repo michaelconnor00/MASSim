@@ -217,10 +217,6 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
         AgCommStatCode returnCode = AgCommStatCode.DONE;
         logInf("Send Cycle");
 
-        if(canCalc()){
-            wellbeing = wellbeingProximity(); //MC Nov 28 exp
-            logInf("My wellbeing = " + wellbeing);
-        }
 
         switch(state) {
             case S_INIT:
