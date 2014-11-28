@@ -45,19 +45,19 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			return;
 		}
 
-		wellbeing = wellbeing();
+//		wellbeing = wellbeingProximity();
 
 		if (reachedGoal())
 		{
 			if (canBCast()) {
 				logInf2("Broadcasting my wellbeing to the team");
-				broadcastMsg(prepareWellbeingUpMsg(wellbeing()));
+				broadcastMsg(prepareWellbeingUpMsg(wellbeing));
 			}
 			setState(ResMAPState.R_GET_HELP_REQ);
 		}
 		else
 		{
-			RowCol nextCell = path().getNextPoint(pos());
+			nextCell = path().getNextPoint(pos());
 			int cost = getCellCost(nextCell);
 
 			boolean needHelp = checkNeedHelp(cost, wellbeing);
@@ -68,7 +68,8 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 
 				if (canCalc()) {
 
-					int helpAmount = cost - (resourcePoints() - Team.broadcastCost - Agent.calculationCost);
+					int helpAmount = cost - (resourcePoints() - Team.broadcastCost - Agent.calculationCost) + Team.unicastCost;
+					//MC Nov 27 2014, added unicost amount so we don't need to check for it in R-GET-BIDS. Each bid will provide the cost.
 
 					int teamBenefit = calcTeamBenefit(helpAmount, nextCell);
 
@@ -76,7 +77,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 						String helpReqMsg = prepareHelpReqMsg(
 								estimatedCostToGoal, //estimated cost to goal
 								teamBenefit, //teambenefit
-								cost //next step cost
+								helpAmount //next step cost // MC Nov 27 2014
 						);
 
 
@@ -164,7 +165,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 		if (helpReqMsgs.size() > 0) {
 			bidding = false;
 			bidMsgs = new ArrayList();
-
+					
 			logInf("Received " + helpReqMsgs.size() + " help requests");
 
 			// Sort help request messages from cheapest cost to goal to most expensive
@@ -179,10 +180,12 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 				// and I have enough resources to sacrifice.
 				if (((estimatedCostToGoal / reqECostToGoal) > costToGoalHelpThreshold) &&
 						(resourcePoints - Team.unicastCost - TeamTask.helpOverhead) >= reqECostToGoal) {
-					bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), wellbeing()));
+					int reqNextStepCost = helpReqMsgs.get(i).getIntValue("nextStepCost") + TeamTask.helpOverhead ;
+					int myTeamLoss = calcTeamLoss(reqNextStepCost);
+					bidMsgs.add(prepareBidMsg(requesterAgent, reqECostToGoal.intValue(), myTeamLoss, wellbeing));
 					helpReqMsgs.remove(helpReqMsgs.get(i));
 					bidding = true;
-					break;
+//					break; Why is this here?
 				}
 			}
 
@@ -201,26 +204,28 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 				reqWellbeing = helpReqMsgs.get(i).getDoubleValue("wellbeing");
 				int requesterAgent = helpReqMsgs.get(i).sender();
 
-				int teamLoss = -1;
+				int myTeamLoss = -1;
 				int netTeamBenefit = -1;
 
 				if (canCalc())
 				{
-					teamLoss = calcTeamLoss(reqNextStepCost);
-					netTeamBenefit = stepTeamBenefit - teamLoss;
+					myTeamLoss = calcTeamLoss(reqNextStepCost + Team.unicastCost); //MC Nov 27 2014 
+					netTeamBenefit = stepTeamBenefit - myTeamLoss;
 				}
 
-				logInf("For agent "+ requesterAgent+", team loss= "+teamLoss+
+				logInf("For agent "+ requesterAgent+", team loss= "+myTeamLoss+
 						", NTB= "+netTeamBenefit);
 
-				double wellBeing = wellbeing();
+				//double wellBeing = wellbeing();
 
 				if (netTeamBenefit > 0 && reqNextStepCost <= myMaxAssistance) {
-					bidMsgs.add(prepareBidMsg(requesterAgent, reqNextStepCost, wellBeing));
+					resourcePoints -= reqNextStepCost; //MC Nov 27 2014, does this happen somewhere else?
+					bidMsgs.add(prepareBidMsg(requesterAgent, (reqNextStepCost-TeamTask.helpOverhead), myTeamLoss, wellbeing));
 					bidding = true;
-				} else if (netTeamBenefit > 0 && reqWellbeing > wellBeing) {
+				} else if (netTeamBenefit > 0 && reqWellbeing > wellbeing) {
 					//Bid all the assistance you have available
-					bidMsgs.add(prepareBidMsg(requesterAgent, myMaxAssistance, wellBeing));//MC nov 27 2014
+					resourcePoints -= myMaxAssistance;  //MC Nov 27 2014, does this happen somewhere else?
+					bidMsgs.add(prepareBidMsg(requesterAgent, myMaxAssistance, myTeamLoss, wellbeing));//MC nov 27 2014
 					bidding = true;
 				}
 
@@ -288,8 +293,8 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			for (Message bid : receivedBidMsgs)
 			{
 				//Check If agent has sacrificed own resources to self to reach goal
-				if (bid.getIntValue("resourceAmount") >= estimatedCostToGoal && canSend()){
-					resourcePoints -= Team.unicastCost;
+				if (bid.getIntValue("resourceAmount") >= estimatedCostToGoal ){//&& canSend()){
+//					System.out.println("----SACRIFICE");
 					buffer = 0;
 					resourcePoints += bid.getIntValue("resourceAmount");
 					//Use all the sacrificed resources.
@@ -297,42 +302,48 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 				}
 			}
 
-			//Collections.sort(receivedBidMsgs, tbOrder); //sort TB DESC.
+			
 
 			// Ascending wellbeing (previously sorted by well being in descending order)
 			//Collections.reverse(receivedBidMsgs);  //TODO : we used wellbeing here, could try to use Team Benefit instead?
-
+			Collections.sort(receivedBidMsgs, tlossOrder); //sort TB DESC.
+			
 			//Combine bids
 			for (int i=0; (i < receivedBidMsgs.size()) && (buffer > 0); i++){
 
 				int bidAmount = receivedBidMsgs.get(i).getIntValue("resourceAmount");
 				int helperID = receivedBidMsgs.get(i).sender();
 
-				if (bidAmount == buffer && canSend()){  //Only one bid required
+				if (bidAmount == buffer ){//&& canSend()){  //Only one bid required
+//					System.out.println("--Bid Equal");
 					buffer = 0;
 					resourcePoints += bidAmount;
 					//Use the whole bid
 					confMsgs.add(prepareConfirmMsg(0, helperID));//MC Nov 27 2014
 				}
-				else if (bidAmount < buffer && canSend()){ //require multiple bids
+				else if (bidAmount < buffer ){//&& canSend()){ //require multiple bids
+//					System.out.println("--Bid Less");
 					buffer -= bidAmount;
 					resourcePoints += bidAmount;
 					//Use the whole bid
 					confMsgs.add(prepareConfirmMsg(0, helperID));//MC Nov 27 2014
 				}
-				else if (bidAmount > buffer && canSend()){
+				else if (bidAmount > buffer ){//&& canSend()){
+//					System.out.println("--Bid More");
 					resourcePoints += buffer;
 					//Use part of the bid, return un-used amount
 					confMsgs.add(prepareConfirmMsg((bidAmount-buffer), helperID));//MC Nov 27 2014
 					buffer = 0; //Or break;
 				}
 				else{
+//					System.out.println("--Blocked??? "+bidAmount+", "+buffer);
 					setState(ResMAPState.S_BLOCKED);
 					logInf("Now I'm blocked!");
 				}
 			}
 			
 			if (buffer > 0){
+//				System.out.println("--NOT enough bids "+buffer+", "+receivedBidMsgs.size());
 				//Then there were not enough bids to to achieve the resources I needed
 				//So release the bids that were used
 				confMsgs = new ArrayList<Message>();

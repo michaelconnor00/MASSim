@@ -69,25 +69,25 @@ public class ResourceExp {
 						runSimulation1(numberOfExperiments, numberOfRuns);
 						break;
 					
-					// 6 Teams, variable: disturbance amount
-					case "2":
-						runSimulation2(numberOfExperiments, numberOfRuns);
-						break;
-		
-					// 6 Teams, variable: initial resources (Constrained Resources)
-					case "3":
-						runSimulation3(numberOfExperiments, numberOfRuns);
-						break;
-		
-					// 6 Teams, variable: initial resources (Constrained Resources (2x exp #3))
-					case "4":
-						runSimulation4(numberOfExperiments, numberOfRuns);
-						break;
-		
-					// 6 Teams, variable: increasing unicast costs
-					case "5":
-						runSimulation5(numberOfExperiments, numberOfRuns);
-						break;
+//					// 6 Teams, variable: disturbance amount
+//					case "2":
+//						runSimulation2(numberOfExperiments, numberOfRuns);
+//						break;
+//		
+//					// 6 Teams, variable: initial resources (Constrained Resources)
+//					case "3":
+//						runSimulation3(numberOfExperiments, numberOfRuns);
+//						break;
+//		
+//					// 6 Teams, variable: initial resources (Constrained Resources (2x exp #3))
+//					case "4":
+//						runSimulation4(numberOfExperiments, numberOfRuns);
+//						break;
+//		
+//					// 6 Teams, variable: increasing unicast costs
+//					case "5":
+//						runSimulation5(numberOfExperiments, numberOfRuns);
+//						break;
 					
 					// 3 Teams , variable: init resources
 					case "6":
@@ -182,7 +182,8 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * i;
@@ -293,7 +294,8 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * i;
@@ -726,7 +728,8 @@ public static void runSimulation6(int numberOfExperiments, int numberOfRuns) thr
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05;
@@ -824,7 +827,8 @@ public static void runSimulation7(int numberOfExperiments, int numberOfRuns) thr
 		AdvActionMAPRepAgent.lowCostThreshold = 50;
 		AdvActionMAPRepAgent.importanceVersion = 2;
 
-		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+		ResourceMAPRepAgent.canSacrifice = true;
 
 		/* vary the disturbance */
 		SimulationEngine.disturbanceLevel = 0.05;
@@ -921,7 +925,8 @@ public static void runSimulation8(int numberOfExperiments, int numberOfRuns) thr
 		AdvActionMAPRepAgent.lowCostThreshold = 50;
 		AdvActionMAPRepAgent.importanceVersion = 2;
 
-		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+		ResourceMAPRepAgent.canSacrifice = true;
 
 		/* vary the disturbance */
 		SimulationEngine.disturbanceLevel = 0.05;

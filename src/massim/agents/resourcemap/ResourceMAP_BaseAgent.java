@@ -52,6 +52,9 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
 
     // Estimated cost to goal
     protected double estimatedCostToGoal;
+    
+    //Next Step
+    protected RowCol nextCell;
 
     // Well being
     public static double WLL;
@@ -79,6 +82,7 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
     public static Comparator<Message> averageStepCostOrder;
     public static Comparator<Message> wellbeingOrder;
     public static Comparator<Message> tbOrder;
+    public static Comparator<Message> tlossOrder;
 
 
     /**
@@ -131,6 +135,13 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
             @Override
             public int compare(Message m1, Message m2) { //DESC
                 return Integer.compare(m2.getIntValue("teamBenefit"), m1.getIntValue("teamBenefit"));
+            }
+        };
+            
+       tlossOrder = new Comparator<Message>() {
+            @Override
+            public int compare(Message m1, Message m2) { //ASC
+                return Integer.compare(m1.getIntValue("teamLoss"), m2.getIntValue("teamLoss"));
             }
         };
     }
@@ -207,7 +218,7 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
         logInf("Send Cycle");
 
         if(canCalc()){
-            wellbeing = wellbeing();
+            wellbeing = wellbeingProximity(); //MC Nov 28 exp
             logInf("My wellbeing = " + wellbeing);
         }
 
@@ -465,6 +476,28 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
         return eCost;
     }
 
+    
+    /**
+     * Calculate the agent's wellbeing based on number of steps
+     * 
+     * @return the agents wellbeing as ratio of resources and steps
+     */
+    protected double wellbeingProximity() {
+    	int currentLocation = path().getIndexOf(pos())+1; //returns index!, so add 1
+    	int sizeOfPath = path().getNumPoints();
+        int stepsToGoal = sizeOfPath - currentLocation;
+        
+        double proximityFactor = 2.0 - ((double)stepsToGoal / (double)sizeOfPath);
+        // steps =3, path =10, 3/10=.3, 2.0-.3 = 1.7 proximity factor
+        // steps =9, path =10, 9/10=.9, 2.0-.9 = 1.1 proximity factor
+        
+        double eCost = estimatedCostToGoal;
+        if (eCost == 0)
+            return resourcePoints();
+        else
+            return ((double)resourcePoints()/eCost)*proximityFactor;
+    }
+    
     /**
      * Calculates the agent's wellbeing.
      *
@@ -621,7 +654,7 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
         helpReq.putTuple("teamBenefit", stepTB);
         helpReq.putTuple("nextStepCost", nextStepCost);
 
-        helpReq.putTuple("wellbeing", wellbeing());
+        helpReq.putTuple("wellbeing", wellbeing);
 
         return helpReq.toString();
     }
@@ -649,11 +682,11 @@ public abstract class ResourceMAP_BaseAgent extends Agent {
      * @param requester				The help requester agent
      * @return						The message encoded in String
      */
-    protected Message prepareBidMsg(int requester, int resourceAmount, double helperWellBeing) {
+    protected Message prepareBidMsg(int requester, int resourceAmount, int teamLoss, double helperWellBeing) {
         Message bidMsg = new Message(id(),requester,MAP_BID_MSG);
         bidMsg.putTuple("resourceAmount", resourceAmount);
         bidMsg.putTuple("requester", requester);
-//        bidMsg.putTuple("teamBenefit", helperTB); //MC nov 27 2014
+        bidMsg.putTuple("teamLoss", teamLoss); //MC nov 27 2014
         bidMsg.putTuple("wellbeing", helperWellBeing );
 
         return bidMsg;
