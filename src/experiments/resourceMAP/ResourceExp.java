@@ -38,9 +38,6 @@ public class ResourceExp {
 
 //			int experimentNumber = -1;
 			String experimentNumber;
-			int numberOfExperiments = -1;
-			int numberOfRuns = -1;
-			
 			
 			System.out.println("Enter the experiment number:");
 //			experimentNumber = inputScanner.nextInt();
@@ -49,10 +46,10 @@ public class ResourceExp {
 //			System.out.println(""+numList[0]+", "+numList[1]+", "+numList[2]);
 
 			System.out.println("Enter the number of experiments to run:");
-			numberOfExperiments = inputScanner.nextInt();
+			final int numberOfExperiments = inputScanner.nextInt();
 			
 			System.out.println("Enter the numbers of runs per experiment:");
-			numberOfRuns = inputScanner.nextInt();
+			final int numberOfRuns = inputScanner.nextInt();
 
 			if (numberOfRuns < 1)
 				throw new Exception("numberOfRuns is invalid!");
@@ -66,7 +63,12 @@ public class ResourceExp {
 					
 					// 3 Teams , variable: disturbance amount
 					case "1":
-						runSimulation1(numberOfExperiments, numberOfRuns);
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation1(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
 						break;
 					
 //					// 6 Teams, variable: disturbance amount
@@ -91,17 +93,32 @@ public class ResourceExp {
 					
 					// 3 Teams , variable: init resources
 					case "6":
-					   runSimulation6(numberOfExperiments, numberOfRuns);
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation6(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
 						break;
 				    
 				    // 3 Teams , variable: unicast cost
 					case "7":
-					   runSimulation7(numberOfExperiments, numberOfRuns);
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation7(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
 						break;
 				    
 				    // 3 Teams , variable: calculation cost
 					case "8":
-					   runSimulation8(numberOfExperiments, numberOfRuns);
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation8(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
 						break;
 						
 					default:
@@ -116,7 +133,7 @@ public class ResourceExp {
 
 	
 	
-	public static void runSimulation1(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation1(int numberOfExperiments, int numberOfRuns) {
 		
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -182,7 +199,7 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.25;
 			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
@@ -215,7 +232,7 @@ public class ResourceExp {
 	}
 
 
-	public static void runSimulation2(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation2(int numberOfExperiments, int numberOfRuns) {
 		
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
@@ -328,7 +345,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
-	public static void runSimulation3(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation3(int numberOfExperiments, int numberOfRuns) {
 
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
@@ -440,7 +457,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
-	public static void runSimulation4(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation4(int numberOfExperiments, int numberOfRuns) {
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -551,7 +568,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
-	public static void runSimulation5(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation5(int numberOfExperiments, int numberOfRuns) {
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -662,7 +679,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 	
-public static void runSimulation6(int numberOfExperiments, int numberOfRuns) throws Exception {
+public static void runSimulation6(int numberOfExperiments, int numberOfRuns) {
 		
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -761,7 +778,7 @@ public static void runSimulation6(int numberOfExperiments, int numberOfRuns) thr
 	}
 
 
-public static void runSimulation7(int numberOfExperiments, int numberOfRuns) throws Exception {
+public static void runSimulation7(int numberOfExperiments, int numberOfRuns) {
 	
 	SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 	SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -859,7 +876,7 @@ public static void runSimulation7(int numberOfExperiments, int numberOfRuns) thr
 
 }
 
-public static void runSimulation8(int numberOfExperiments, int numberOfRuns) throws Exception {
+public static void runSimulation8(int numberOfExperiments, int numberOfRuns) {
 	
 	SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 	SimulationEngine.numOfColors = SimulationEngine.colorRange.length;

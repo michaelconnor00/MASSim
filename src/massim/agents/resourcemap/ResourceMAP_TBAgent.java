@@ -298,7 +298,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 			{
 				//Check If agent has sacrificed own resources to self to reach goal
 				if (bid.getIntValue("resourceAmount") >= estimatedCostToGoal ){//&& canSend()){
-					System.out.println("----SACRIFICE");
+//					System.out.println("----SACRIFICE");
 					buffer = 0;
 					resourcePoints += bid.getIntValue("resourceAmount");
 					//Use all the sacrificed resources.
