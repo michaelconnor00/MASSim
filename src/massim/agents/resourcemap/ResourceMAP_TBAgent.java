@@ -310,30 +310,34 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 
 				if (bidAmount == buffer && canSend()){  //Only one bid required
 					buffer = 0;
-					resourcePoints -= Team.unicastCost;
+					resourcePoints -= Team.unicastCost; //TODO this needs to be removed, done in sendMsg
 					resourcePoints += bidAmount;
 					//Use the whole bid
-					confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
+					confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID)); //TODO helpOverhead was removed when bid was made
 				}
 				else if (bidAmount < buffer && canSend()){ //require multiple bids
 					buffer -= bidAmount;
-					resourcePoints -= Team.unicastCost;
+					resourcePoints -= Team.unicastCost; //TODO this needs to be removed, done in sendMsg
 					resourcePoints += bidAmount;
 					//Use the whole bid
-					confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID));
+					confMsgs.add(prepareConfirmMsg(-TeamTask.helpOverhead, helperID)); //TODO helpOverhead was removed when bid was made
 				}
 				else if (bidAmount > buffer && canSend()){
-					resourcePoints -= Team.unicastCost;
+					resourcePoints -= Team.unicastCost; //TODO this needs to be removed, done in sendMsg
 					resourcePoints += buffer;
 					//Use part of the bid, return un-used amount
-					confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID));
+					confMsgs.add(prepareConfirmMsg((bidAmount-buffer-TeamTask.helpOverhead), helperID)); //TODO helpOverhead was removed when bid was made
 					buffer = 0; //Or break;
 				}
 				else{
 					setState(ResMAPState.S_BLOCKED);
 					logInf("Now I'm blocked!");
 				}
+
 			}
+
+			//TODO I think there is a problem here. What if they only get one bid that isn't enough for the move. The bids should not be used.
+			//TODO confMsgs.deleteAllMsgs
 
 			setState(ResMAPState.S_RESPOND_BIDS);
 		}
