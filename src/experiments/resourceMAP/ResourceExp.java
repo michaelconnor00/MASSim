@@ -36,71 +36,96 @@ public class ResourceExp {
 
 		try {
 
-			int experimentNumber = -1;
-			int numberOfExperiments = -1;
-			int numberOfRuns = -1;
-			
+//			int experimentNumber = -1;
+			String experimentNumber;
 			
 			System.out.println("Enter the experiment number:");
-			experimentNumber = inputScanner.nextInt();
+//			experimentNumber = inputScanner.nextInt();
+			experimentNumber = inputScanner.nextLine();
+			String[] numList = experimentNumber.split(",");
+//			System.out.println(""+numList[0]+", "+numList[1]+", "+numList[2]);
 
 			System.out.println("Enter the number of experiments to run:");
-			numberOfExperiments = inputScanner.nextInt();
+			final int numberOfExperiments = inputScanner.nextInt();
 			
 			System.out.println("Enter the numbers of runs per experiment:");
-			numberOfRuns = inputScanner.nextInt();
+			final int numberOfRuns = inputScanner.nextInt();
 
 			if (numberOfRuns < 1)
 				throw new Exception("numberOfRuns is invalid!");
 
 			if (numberOfExperiments < 1)
 				throw new Exception("numberOfExperiments is invalid!");
-			
-			// 3 Teams , variable: disturbance amount
-			if (experimentNumber == 1) {
-				runSimulation1(numberOfExperiments, numberOfRuns);
-			}
-			
-			// 6 Teams, variable: disturbance amount
-			else if (experimentNumber == 2){
-				runSimulation2(numberOfExperiments, numberOfRuns);
-			}
-
-			// 6 Teams, variable: initial resources (Constrained Resources)
-			else if (experimentNumber == 3){
-				runSimulation3(numberOfExperiments, numberOfRuns);
-			}
-
-			// 6 Teams, variable: initial resources (Constrained Resources (2x exp #3))
-			else if (experimentNumber == 4){
-				runSimulation4(numberOfExperiments, numberOfRuns);
-			}
-
-			// 6 Teams, variable: increasing unicast costs
-			else if (experimentNumber == 5){
-				runSimulation5(numberOfExperiments, numberOfRuns);
-			}
-			
-			// 3 Teams , variable: init resources
-			else if (experimentNumber == 6) {
-			   runSimulation6(numberOfExperiments, numberOfRuns);
-			}
-		    
-		    // 3 Teams , variable: unicast cost
-			else if (experimentNumber == 7) {
-			   runSimulation7(numberOfExperiments, numberOfRuns);
-			}
-		    
-		    // 3 Teams , variable: calculation cost
-			else if (experimentNumber == 8) {
-			   runSimulation8(numberOfExperiments, numberOfRuns);
-			}
-		    
-
-			else{
-				System.out.println("A valid experiment was not selected, exiting program.");
-				System.exit(0);
-			}
+			for(int i=0; i<numList.length; i++){
+				String e = numList[i];
+				System.out.println("Exp num: "+e);
+				switch (e){
+					
+					// 3 Teams , variable: disturbance amount
+					case "1":
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation1(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
+						break;
+					
+//					// 6 Teams, variable: disturbance amount
+//					case "2":
+//						runSimulation2(numberOfExperiments, numberOfRuns);
+//						break;
+//		
+//					// 6 Teams, variable: initial resources (Constrained Resources)
+//					case "3":
+//						runSimulation3(numberOfExperiments, numberOfRuns);
+//						break;
+//		
+//					// 6 Teams, variable: initial resources (Constrained Resources (2x exp #3))
+//					case "4":
+//						runSimulation4(numberOfExperiments, numberOfRuns);
+//						break;
+//		
+//					// 6 Teams, variable: increasing unicast costs
+//					case "5":
+//						runSimulation5(numberOfExperiments, numberOfRuns);
+//						break;
+					
+					// 3 Teams , variable: init resources
+					case "6":
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation6(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
+						break;
+				    
+				    // 3 Teams , variable: unicast cost
+					case "7":
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation7(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
+						break;
+				    
+				    // 3 Teams , variable: calculation cost
+					case "8":
+						new Thread() {
+							@Override
+							public void run(){
+								runSimulation8(numberOfExperiments, numberOfRuns);
+							}
+						}.start();
+						break;
+						
+					default:
+						System.out.println("A valid experiment was not selected, exiting program.");
+						System.exit(0);
+				}
+			}	
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -108,7 +133,7 @@ public class ResourceExp {
 
 	
 	
-	public static void runSimulation1(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation1(int numberOfExperiments, int numberOfRuns) {
 		
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -174,7 +199,8 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.25;
+			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * i;
@@ -206,7 +232,7 @@ public class ResourceExp {
 	}
 
 
-	public static void runSimulation2(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation2(int numberOfExperiments, int numberOfRuns) {
 		
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
@@ -285,7 +311,8 @@ public class ResourceExp {
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * i;
@@ -318,7 +345,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
-	public static void runSimulation3(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation3(int numberOfExperiments, int numberOfRuns) {
 
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
@@ -430,7 +457,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
-	public static void runSimulation4(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation4(int numberOfExperiments, int numberOfRuns) {
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -541,7 +568,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 
-	public static void runSimulation5(int numberOfExperiments, int numberOfRuns) throws Exception {
+	public static void runSimulation5(int numberOfExperiments, int numberOfRuns) {
 
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -652,7 +679,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 	}
 	
-public static void runSimulation6(int numberOfExperiments, int numberOfRuns) throws Exception {
+public static void runSimulation6(int numberOfExperiments, int numberOfRuns) {
 		
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -718,7 +745,8 @@ public static void runSimulation6(int numberOfExperiments, int numberOfRuns) thr
 			AdvActionMAPRepAgent.lowCostThreshold = 50;
 			AdvActionMAPRepAgent.importanceVersion = 2;
 
-			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+			ResourceMAPRepAgent.canSacrifice = true;
 
 			/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05;
@@ -750,7 +778,7 @@ public static void runSimulation6(int numberOfExperiments, int numberOfRuns) thr
 	}
 
 
-public static void runSimulation7(int numberOfExperiments, int numberOfRuns) throws Exception {
+public static void runSimulation7(int numberOfExperiments, int numberOfRuns) {
 	
 	SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 	SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -816,7 +844,8 @@ public static void runSimulation7(int numberOfExperiments, int numberOfRuns) thr
 		AdvActionMAPRepAgent.lowCostThreshold = 50;
 		AdvActionMAPRepAgent.importanceVersion = 2;
 
-		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+		ResourceMAPRepAgent.canSacrifice = true;
 
 		/* vary the disturbance */
 		SimulationEngine.disturbanceLevel = 0.05;
@@ -847,7 +876,7 @@ public static void runSimulation7(int numberOfExperiments, int numberOfRuns) thr
 
 }
 
-public static void runSimulation8(int numberOfExperiments, int numberOfRuns) throws Exception {
+public static void runSimulation8(int numberOfExperiments, int numberOfRuns) {
 	
 	SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 	SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
@@ -913,7 +942,8 @@ public static void runSimulation8(int numberOfExperiments, int numberOfRuns) thr
 		AdvActionMAPRepAgent.lowCostThreshold = 50;
 		AdvActionMAPRepAgent.importanceVersion = 2;
 
-		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.1;
+		ResourceMAPRepAgent.costToGoalHelpThreshold = 1.0;
+		ResourceMAPRepAgent.canSacrifice = true;
 
 		/* vary the disturbance */
 		SimulationEngine.disturbanceLevel = 0.05;
