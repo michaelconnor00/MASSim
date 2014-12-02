@@ -63,12 +63,7 @@ public class ResourceExp {
 					
 					// 3 Teams , variable: disturbance amount
 					case "1":
-						new Thread() {
-							@Override
-							public void run(){
-								runSimulation1(numberOfExperiments, numberOfRuns);
-							}
-						}.start();
+						runSimulation1(numberOfExperiments, numberOfRuns);
 						break;
 					
 //					// 6 Teams, variable: disturbance amount
@@ -93,32 +88,17 @@ public class ResourceExp {
 					
 					// 3 Teams , variable: init resources
 					case "6":
-						new Thread() {
-							@Override
-							public void run(){
-								runSimulation6(numberOfExperiments, numberOfRuns);
-							}
-						}.start();
+						runSimulation6(numberOfExperiments, numberOfRuns);
 						break;
 				    
 				    // 3 Teams , variable: unicast cost
 					case "7":
-						new Thread() {
-							@Override
-							public void run(){
-								runSimulation7(numberOfExperiments, numberOfRuns);
-							}
-						}.start();
+						runSimulation7(numberOfExperiments, numberOfRuns);
 						break;
 				    
 				    // 3 Teams , variable: calculation cost
 					case "8":
-						new Thread() {
-							@Override
-							public void run(){
-								runSimulation8(numberOfExperiments, numberOfRuns);
-							}
-						}.start();
+						runSimulation8(numberOfExperiments, numberOfRuns);
 						break;
 						
 					default:
@@ -131,10 +111,10 @@ public class ResourceExp {
 		}
 	}
 
-	
-	
+
+
 	public static void runSimulation1(int numberOfExperiments, int numberOfRuns) {
-		
+
 		SimulationEngine.colorRange = new int[] { 0, 1, 2, 3, 4, 5 };
 		SimulationEngine.numOfColors = SimulationEngine.colorRange.length;
 		SimulationEngine.actionCostsRange = new int[] { 10, 40, 100, 150, 250, 300, 350, 500 };
@@ -153,10 +133,9 @@ public class ResourceExp {
 		CsvTool csv_file = new CsvTool("Simulation1Output", csv_columns);
 
 		/* The experiments loop */
-
 		for (int i = 0; i < numberOfExperiments && SimulationEngine.disturbanceLevel <= 1; i++) {
 
-			/* Create the teams involved in the simulation */
+					/* Create the teams involved in the simulation */
 			Team[] teams = new Team[3];
 
 			// No help, re-plan team
@@ -164,15 +143,15 @@ public class ResourceExp {
 
 			// Advanced action MAP, re-plan
 			teams[1] = new AdvActionMAPRepTeam();
-			
+
 			// Resource MAP, re-plan
 			teams[2] = new ResourceMAPRep_TBTeam();
 			
 
-			/* Create the SimulationEngine */
+					/* Create the SimulationEngine */
 			SimulationEngine se = new SimulationEngine(teams);
 
-			/* Set the experiment-wide parameters: */
+					/* Set the experiment-wide parameters: */
 
 			Team.unicastCost = 1;
 			Team.broadcastCost = Team.unicastCost * (Team.teamSize - 1);
@@ -184,7 +163,7 @@ public class ResourceExp {
 			TeamTask.achievementReward = 2000;
 			TeamTask.initResCoef = 160;
 
-			/* Set the Team Attributes */
+					/* Set the Team Attributes */
 
 			NoHelpRepAgent.WREP = -0.25;
 
@@ -202,10 +181,10 @@ public class ResourceExp {
 			ResourceMAPRepAgent.costToGoalHelpThreshold = 1.25;
 			ResourceMAPRepAgent.canSacrifice = true;
 
-			/* vary the disturbance */
+					/* vary the disturbance */
 			SimulationEngine.disturbanceLevel = 0.05 * i;
 
-			/* Initialize and run the experiment */
+					/* Initialize and run the experiment */
 			se.initializeExperiment(numberOfRuns);
 			int[] teamScores = se.runExperiment();
 
@@ -230,6 +209,7 @@ public class ResourceExp {
 		System.out.println("Simulation Metadata saved to output text file.");
 
 	}
+
 
 
 	public static void runSimulation2(int numberOfExperiments, int numberOfRuns) {

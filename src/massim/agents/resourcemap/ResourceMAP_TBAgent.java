@@ -356,7 +356,7 @@ public class ResourceMAP_TBAgent extends ResourceMAP_BaseAgent {
 				//So release the bids that were used
 				confMsgs = new ArrayList<Message>();
 			}
-			
+
 			setState(ResMAPState.S_RESPOND_BIDS);
 		}
 	}
